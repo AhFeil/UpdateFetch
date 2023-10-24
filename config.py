@@ -28,6 +28,15 @@ minio_host_alias = 'local'   # mc 添加主机时，的 ALIAS
 bucket = 'file'   # mc 上传时，要放到哪个 bucket
 system = platform.system()  # 获取操作系统名字
 
+items = {"naive_client": {
+        "name": "naiveproxy",
+        "website": "github",
+        "project_name": "klzgrad/naiveproxy",
+        "url": 'https://github.com/klzgrad/naiveproxy/releases/download/${tag}/naiveproxy-${tag}-${system}-${ARCHITECTURE}.${suffix_name}',
+        "system": (("win", "zip"), ("linux", "tar.xz")),
+        "architecture": ("arm64", "x64")},
+}
+
 
 class Environment(Enum):
     WINDOWS = 1
@@ -60,6 +69,7 @@ else:
 
 abs_td_path = os.path.abspath(temp_download_dir)
 abs_data_path = os.path.abspath(data_dir)
+# 记录版本的文件的路径
 version_file_path = os.path.join(abs_data_path, version_filename)
 # 若文件不存在就先创建空文件
 if not os.path.exists(version_file_path):

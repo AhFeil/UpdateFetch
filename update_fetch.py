@@ -7,18 +7,38 @@ import requests
 import config
 
 
-def download(name, suffix_name, url, latest_version, system, architecture):
-    # 构造下载链接
-    download_url = url.replace('${tag}', latest_version).\
-                       replace('${ARCHITECTURE}', architecture).\
-                       replace('${system}', system).\
-                       replace('${suffix_name}', suffix_name)
-    print(download_url)
-    # 下载软件
+def get_url_filename(website, name, suffix_name, url, latest_version, system, architecture):
+    """
+    获得最终的下载链接，并生成最终的保存文件名
+    :param website:
+    :param name:
+    :param suffix_name:
+    :param url:
+    :param latest_version:
+    :param system:
+    :param architecture:
+    :return:
+    """
+    if website == 'github':
+        # 构造下载链接
+        download_url = url.replace('${tag}', latest_version).\
+                           replace('${ARCHITECTURE}', architecture).\
+                           replace('${system}', system).\
+                           replace('${suffix_name}', suffix_name)
+        print(download_url)
+    else:
+        download_url = None
+        print(f"Do not support this website: {website}")
     filename = f'{config.abs_td_path}/{name}-{system}-{architecture}-{latest_version}.{suffix_name}'
-    subprocess.run(['curl', '-L', '-o', filename, download_url])
+    return download_url, filename
 
-    return filename
+
+def download(download_url, download_dir, filename):
+    filepath = os.path.join(download_dir, filename)
+    # 下载软件
+    subprocess.run(['curl', '-L', '-o', filepath, download_url])
+
+    return filepath
 
 
 def get_latest(website, project_name):
@@ -46,12 +66,12 @@ def check_version(project_name, latest_version, version_file):
     current_version = version_data.get(project_name)
 
     if current_version == latest_version:
+        print("version is same")
         return False
     else:
         version_data[project_name] = latest_version
         with open(version_file, 'w', encoding='utf-8') as f:
             json.dump(version_data, f, ensure_ascii=False)
-        print("version is same")
         return current_version
 
 
@@ -67,30 +87,28 @@ def upload_to_minio(filename, old_version_filename):
 
 
 # 测试
-name = "naiveproxy"
-# suffix_name = "tar.xz"
-suffix_name = "zip"
-url = 'https://github.com/klzgrad/naiveproxy/releases/download/${tag}/naiveproxy-${tag}-${system}-${ARCHITECTURE}.${suffix_name}'
-system = "win"
-# system = "linux"
-architecture = "x64"
-# architecture = "x64"
-project_name = "klzgrad/naiveproxy"
-website = "github"
+for item_name, item in config.items.items():
 
-# 获取最新版本号
-latest_version = get_latest(website, project_name)
-# 记录版本的文件的路径
+    name = item["name"]
+    website = item["website"]
+    project_name = item["project_name"]
+    url = item["url"]
+    # 对应多版本，把每个版本都放入列表
+    system_archs = [(system, suffix_name, arch) for system, suffix_name in item["system"] for arch in item["architecture"]]
 
+    # 获取最新版本号
+    latest_version = get_latest(website, project_name)
+    # 如果当前版本与最新版本不一致，则下载并上传到minio
+    if check_version(item_name, latest_version, config.version_file_path):
+        for system, suffix_name, architecture in system_archs:
+            # 获取最新版软件下载链接
+            download_url, filename = get_url_filename(website, name, suffix_name, url, latest_version, system, architecture)
+            # 下载
+            filepath = download(download_url, config.temp_download_dir, filename)
+            # 上传到minio并删除旧版本
+            upload_to_minio(filepath, "naiveproxy-v1.0-linux-x86_64.tar.xz")
 
-# 如果当前版本与最新版本不一致，则下载并上传到minio
-if check_version('naiveproxy', latest_version, config.version_file_path):
-    # 下载最新版软件
-    filename = download(name, suffix_name, url, latest_version, system, architecture)
-    
-    # 上传到minio并删除旧版本
-    upload_to_minio(filename, "naiveproxy-v1.0-linux-x86_64.tar.xz")
-    print("have upload to minio")
-    os.remove(filename)
-else:
-    print("Current version is up to date.")
+            print("have upload to minio")
+            os.remove(filepath)
+    else:
+        print("Current version is up to date.")
