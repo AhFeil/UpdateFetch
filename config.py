@@ -8,15 +8,11 @@ import logging
 import argparse
 
 
-# parser = argparse.ArgumentParser(description="Your script description")
-# # 添加你想要接收的命令行参数
-# parser.add_argument('--chat_id', required=True, help='Chat ID')
-# parser.add_argument('--bot_token', required=True, help='Bot token')
-# # 解析命令行参数
-# args = parser.parse_args()
-# # 将参数值赋给你的变量
-# chat_id = args.chat_id
-# bot_token = args.bot_token
+parser = argparse.ArgumentParser(description="Your script description")
+# 添加你想要接收的命令行参数
+parser.add_argument('--minio_server', required=True, help='minio server domain or ip and port')   # ip:port
+# 解析命令行参数
+args = parser.parse_args()
 
 # 定义所有变量
 temp_download_dir = ''  # 软件临时下载到这里，等上传之后，再删除
@@ -26,6 +22,7 @@ version_filename = 'version.json'
 minio_client_path = 'mc'   # mc 二进制程序的路径
 minio_host_alias = 'local'   # mc 添加主机时，的 ALIAS
 bucket = 'file'   # mc 上传时，要放到哪个 bucket
+minio_server = "http://" + args.minio_server + "/"  # minio 的网址
 system = platform.system()  # 获取操作系统名字
 
 items = {"naive_client": {
@@ -35,7 +32,15 @@ items = {"naive_client": {
         "url": 'https://github.com/klzgrad/naiveproxy/releases/download/${tag}/naiveproxy-${tag}-${system}-${ARCHITECTURE}.${suffix_name}',
         "system": (("win", "zip"), ("linux", "tar.xz")),
         "architecture": ("arm64", "x64")},
+         "xray_binary": {
+        "name": "xray",
+        "website": "github",
+        "project_name": "XTLS/Xray-core",
+        "url": 'https://github.com/XTLS/Xray-core/releases/download/${tag}/Xray-${system}-${ARCHITECTURE}.${suffix_name}',
+        "system": (("windows", "zip"), ("linux", "zip")),
+        "architecture": ("arm64-v8a", "64")},
 }
+# name 是为了生成文件名用的，可以尽量短一点
 
 
 class Environment(Enum):

@@ -29,7 +29,7 @@ def get_url_filename(website, name, suffix_name, url, latest_version, system, ar
     else:
         download_url = None
         print(f"Do not support this website: {website}")
-    filename = f'{config.abs_td_path}/{name}-{system}-{architecture}-{latest_version}.{suffix_name}'
+    filename = f'{name}-{system}-{architecture}-{latest_version}.{suffix_name}'
     return download_url, filename
 
 
@@ -63,10 +63,10 @@ def check_version(project_name, latest_version, version_file):
     """
     with open(version_file, 'r', encoding='utf-8') as f:
         version_data = json.load(f)
-    current_version = version_data.get(project_name)
+    current_version = version_data.get(project_name, "new added")
 
     if current_version == latest_version:
-        print("version is same")
+        print(f"version is same for {project_name}")
         return False
     else:
         version_data[project_name] = latest_version
@@ -75,9 +75,8 @@ def check_version(project_name, latest_version, version_file):
         return current_version
 
 
-def upload_to_minio(filename, old_version_filename):
+def upload_to_minio(filename, minio_server_path, old_version_filename):
     # 使用mc上传到minio
-    minio_server_path = config.minio_host_alias + '/' + config.bucket
     subprocess.run([config.minio_client_path, 'cp', filename, minio_server_path])
     
     # 删除minio里的旧版本
@@ -93,22 +92,25 @@ for item_name, item in config.items.items():
     website = item["website"]
     project_name = item["project_name"]
     url = item["url"]
+    # 上传的位置
+    minio_server_path = config.minio_host_alias + '/' + config.bucket
     # 对应多版本，把每个版本都放入列表
     system_archs = [(system, suffix_name, arch) for system, suffix_name in item["system"] for arch in item["architecture"]]
 
     # 获取最新版本号
     latest_version = get_latest(website, project_name)
     # 如果当前版本与最新版本不一致，则下载并上传到minio
-    if check_version(item_name, latest_version, config.version_file_path):
+    current_version = check_version(item_name, latest_version, config.version_file_path)
+    if current_version:
         for system, suffix_name, architecture in system_archs:
             # 获取最新版软件下载链接
             download_url, filename = get_url_filename(website, name, suffix_name, url, latest_version, system, architecture)
             # 下载
             filepath = download(download_url, config.temp_download_dir, filename)
             # 上传到minio并删除旧版本
-            upload_to_minio(filepath, "naiveproxy-v1.0-linux-x86_64.tar.xz")
+            upload_to_minio(filepath, minio_server_path, current_version)
 
-            print("have upload to minio")
+            print("have upload to minio, the url is " + config.minio_server + config.bucket + "/" + filename)
             os.remove(filepath)
     else:
-        print("Current version is up to date.")
+        print(f"Current version for {name} is up to date.")
