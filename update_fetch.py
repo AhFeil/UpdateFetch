@@ -5,7 +5,7 @@ import config
 
 
 # 配置
-down_app = "curl"
+down_app = config.curl_path
 download_dir = config.temp_download_dir
 version_file = config.version_file_path
 
