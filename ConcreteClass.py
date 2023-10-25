@@ -64,3 +64,8 @@ class MinioUploader(AbstractUploader):
         # 删除旧文件
         subprocess.run([self.app, 'rm', self.server_path + '/' + filename])
 
+    def get_uploaded_files_link(self):
+        server_path = self.server_path.split("/")[1]
+        uploaded_files_link = [f"{server_path}/{file}" for file in self.filenames]
+        return uploaded_files_link
+

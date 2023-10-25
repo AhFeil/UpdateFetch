@@ -80,6 +80,7 @@ class AbstractUploader(ABC):
         self.server_path = server_path
         self.app = app
         self.filepaths = []
+        self.filenames = []
 
     def import_config(self, filepaths):
         self.filepaths = filepaths
@@ -101,6 +102,13 @@ class AbstractUploader(ABC):
 
         for filepath in self.filepaths:
             filename = os.path.basename(filepath)
+            self.filenames.append(filename)
             self.uploading(filepath)
-            print("have upload to server, the url is " + self.server_path + "/" + filename)
+            print(filename + " have upload to server")
         # self.__clear(filenames)
+    
+    @abstractmethod
+    def get_uploaded_files_link(self):
+        """获取文件的下载链接"""
+        raise NotImplementedError
+        
