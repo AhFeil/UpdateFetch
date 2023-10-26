@@ -7,23 +7,7 @@ import json
 import logging
 import argparse
 
-
-items = {"naive_client": {
-        "name": "naiveproxy",
-        "website": "github",
-        "project_name": "klzgrad/naiveproxy",
-        "url": 'https://github.com/klzgrad/naiveproxy/releases/download/${tag}/naiveproxy-${tag}-${system}-${ARCHITECTURE}.${suffix_name}',
-        "system": (("win", "zip"), ("linux", "tar.xz")),
-        "architecture": ("arm64", "x64")},
-         "xray_binary": {
-        "name": "xray",
-        "website": "github",
-        "project_name": "XTLS/Xray-core",
-        "url": 'https://github.com/XTLS/Xray-core/releases/download/${tag}/Xray-${system}-${ARCHITECTURE}.${suffix_name}',
-        "system": (("windows", "zip"), ("linux", "zip")),
-        "architecture": ("arm64-v8a", "64")},
-}
-# name 是为了生成文件名用的，可以尽量短一点
+import ruamel.yaml
 
 
 parser = argparse.ArgumentParser(description="Your script description")
@@ -73,12 +57,14 @@ else:
 
 # 一般无须改动的变量
 version_filename = 'version.json'
+items_filename = 'items.yaml'
 minio_server = "http://" + args.minio_server + "/"  # minio 的网址
 
 abs_td_path = os.path.abspath(temp_download_dir)
 abs_data_path = os.path.abspath(data_dir)
 # 记录版本的文件的路径
 version_file_path = os.path.join(abs_data_path, version_filename)
+items_file_path = os.path.join(abs_data_path, items_filename)
 # 若文件不存在就先创建空文件
 if not os.path.exists(version_file_path):
     with open(version_file_path, 'w', encoding='utf-8') as f:
@@ -86,6 +72,13 @@ if not os.path.exists(version_file_path):
         sample_version = {"sample_project": "v0.01"}
         json.dump(sample_version, f)
 
+yaml = ruamel.yaml.YAML()
+if not os.path.exists(items_file_path):
+    # 可以搞个示例文件，如果不存在，就拷贝一份
+    sys.exit("Warning! There is no items config file. exit.")
+else:
+    with open(items_file_path, "r", encoding='utf-8') as f:
+        items = yaml.load(f)
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',

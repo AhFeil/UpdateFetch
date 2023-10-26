@@ -13,7 +13,7 @@ class GithubDownloader(AbstractDownloader):
         self.name = ""
         self.website = ""
         self.project_name = ""
-        self.url = ""
+        self.sample_url = ""
         self.system = []
         self.architecture = []
         self.system_archs = []
@@ -25,7 +25,7 @@ class GithubDownloader(AbstractDownloader):
         self.name = item_config["name"]
         self.website = item_config["website"]
         self.project_name = item_config["project_name"]
-        self.url = item_config["url"]
+        self.sample_url = item_config["sample_url"]
         self.system = item_config["system"]
         self.architecture = item_config["architecture"]
 
@@ -45,7 +45,7 @@ class GithubDownloader(AbstractDownloader):
         # 构造下载链接
         download_urls = []
         for system, suffix_name, architecture in self.system_archs:
-            download_url = self.url.replace('${tag}', latest_version).\
+            download_url = self.sample_url.replace('${tag}', latest_version).\
                                replace('${ARCHITECTURE}', architecture).\
                                replace('${system}', system).\
                                replace('${suffix_name}', suffix_name)
