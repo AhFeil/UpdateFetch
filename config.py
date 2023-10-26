@@ -6,6 +6,7 @@ import sys
 import json
 import logging
 import argparse
+from collections import deque
 
 import ruamel.yaml
 
@@ -56,7 +57,8 @@ else:
 
 
 # 一般无须改动的变量
-version_filename = 'version.json'
+version_filename = 'version.json'   # 将来把这个去掉，与下面的合一
+version_deque_filename = 'version_deque.json'   # 用于上传后，清楚旧版本的
 items_filename = 'items.yaml'
 minio_server = "http://" + args.minio_server + "/"  # minio 的网址
 
@@ -64,6 +66,7 @@ abs_td_path = os.path.abspath(temp_download_dir)
 abs_data_path = os.path.abspath(data_dir)
 # 记录版本的文件的路径
 version_file_path = os.path.join(abs_data_path, version_filename)
+version_deque_file_path = os.path.join(abs_data_path, version_deque_filename)
 items_file_path = os.path.join(abs_data_path, items_filename)
 # 若文件不存在就先创建空文件
 if not os.path.exists(version_file_path):
@@ -71,6 +74,18 @@ if not os.path.exists(version_file_path):
         # 记录版本的文件，就是键值对，项目名对应当前版本，都是字符串
         sample_version = {"sample_project": "v0.01"}
         json.dump(sample_version, f)
+if not os.path.exists(version_deque_file_path):
+    with open(version_deque_file_path, 'w', encoding='utf-8') as f:
+        # 记录版本的文件，就是键值对，项目名对应 历史版本deque，靠前的是新的
+        sample_deque = deque()
+        sample_deque.appendleft("v0.01")
+        sample_deque.appendleft("v0.02")
+        sample_version_deque = {}
+        sample_version_deque["sample_project"] = sample_deque
+        print(sample_version_deque)
+        # deque 无法保存到 JSON 中，必须先转化为 list
+        for_save_sample_version_deque = {key: list(value) for key, value in sample_version_deque.items()}
+        json.dump(for_save_sample_version_deque, f)
 
 yaml = ruamel.yaml.YAML()
 if not os.path.exists(items_file_path):

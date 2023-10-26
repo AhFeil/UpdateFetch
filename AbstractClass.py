@@ -1,6 +1,7 @@
 import subprocess
 import os
 import json
+from collections import deque
 from abc import ABC, abstractmethod
 
 
@@ -24,6 +25,10 @@ class AbstractDownloader(ABC):
     def get_latest_version(self):
         """交由不同网站以具体实现"""
         raise NotImplementedError
+    
+    def get_latest_version_for_test(self):
+        """测试用"""
+        return self.latest_version_for_test
 
     def check_down_or_not(self, latest_version):
         """检查是否下载，比如检查最新版本是否还是之前已经下过的"""
@@ -57,36 +62,58 @@ class AbstractDownloader(ABC):
 
     def run(self):
         """调用以上命令，串联工作流程"""
-        latest_version = self.get_latest_version()
+        name = self.name
+        filepaths = []   # 保存下载后，文件的路径
+        if self.latest_version_for_test:
+            latest_version = self.get_latest_version_for_test()
+        else:
+            latest_version = self.get_latest_version()
+        
         if self.check_down_or_not(latest_version):
             urls = self.format_url(latest_version)
             filenames = self.format_filename(latest_version)
-            filepaths = []
             for download_url, filename in zip(urls, filenames):
                 filepaths.append(self.downloading(download_url, filename))
-            return filepaths
+            return filepaths, latest_version
         else:
             print(f"Current version for {self.name} is up to date.")
-            return None
+            return filepaths, latest_version
 
-    def __del__(self):
+    def save_version(self):
+        """保存内存中的版本信息到文件中"""
         with open(self.version_file, 'w', encoding='utf-8') as f:
             json.dump(self.version_data, f, ensure_ascii=False)
+        print("Downloader: Have saved version")
+
+    def __del__(self):
+        self.save_version()
 
 
 class AbstractUploader(ABC):
     """将文件上传，先指定用的软件路径和上传的位置"""
-    def __init__(self, app, server_path):
+    def __init__(self, app, server_path, version_deque_file):
         self.server_path = server_path
+        self.item_upload_path = ""
         self.app = app
         self.filepaths = []
+        self.latest_version = ""
         self.filenames = []
+        self.oldVersionCount = 2   # 保留几个旧版本，不含最新版本
+        self.version_deque_file = version_deque_file
+        with open(self.version_deque_file, 'r', encoding='utf-8') as f:
+            version_list = json.load(f)
+            self.version_deque = {key: deque(value) for key, value in version_list.items()}
+            # self.version_deque["sample_project"].appendleft("v0.03")
+            # print(self.version_deque)
 
-    def import_config(self, filepaths):
+    def import_config(self, filepaths, item_name, latest_version):
         self.filepaths = filepaths
+        self.item_name = item_name
+        self.item_upload_path = self.server_path + '/' + self.item_name
+        self.latest_version = latest_version
 
     @abstractmethod
-    def uploading(self, filepath):
+    def uploading(self, filepath, filename):
         """上传"""
         raise NotImplementedError
 
@@ -105,10 +132,28 @@ class AbstractUploader(ABC):
             self.filenames.append(filename)
             self.uploading(filepath)
             print(filename + " have upload to server")
-        # self.__clear(filenames)
+        # 上传完，就把这个版本保存在对列里
+        if self.version_deque.get(self.item_name):
+            self.version_deque[self.item_name].appendleft(self.latest_version)
+        else:
+            temp_deque = deque()
+            temp_deque.appendleft(self.latest_version)
+            self.version_deque[self.item_name] = temp_deque
+        
+        self.clear(self.oldVersionCount)   # 当前还没想好怎么指定特别项目保留的版本，先用默认的
+        
     
     @abstractmethod
     def get_uploaded_files_link(self):
         """获取文件的下载链接"""
         raise NotImplementedError
-        
+
+    def save_version_deque(self):
+        """保存内存中的版本信息到文件中"""
+        with open(self.version_deque_file, 'w', encoding='utf-8') as f:
+            for_save_version_deque = {key: list(value) for key, value in self.version_deque.items()}
+            json.dump(for_save_version_deque, f, ensure_ascii=False)
+        print("Uploader: Have saved version_deque ")
+
+    def __del__(self):
+        self.save_version_deque()
