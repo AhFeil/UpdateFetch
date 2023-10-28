@@ -61,6 +61,12 @@ class GithubDownloader(AbstractDownloader):
 
 class MinioUploader(AbstractUploader):
     """上传到 minio"""
+    def __init__(self, app, server_path, version_deque_file, minio_server_path):
+        super().__init__(app, server_path, version_deque_file)
+        # 由于 minio 客户端用的时候，是预先添加服务端，使用的时候，不需要真正的网址，不方便返回下载链接
+        # 这里添加上真正的网址
+        self.minio_server_path = minio_server_path
+
     def uploading(self, filepath):
         # 每种软件，一个文件夹
         subprocess.run([self.app, 'mb', "--ignore-existing", self.item_upload_path])
@@ -80,6 +86,8 @@ class MinioUploader(AbstractUploader):
 
     def get_uploaded_files_link(self):
         server_path = self.server_path.split("/")[1] + '/' + self.item_name
-        uploaded_files_link = [f"{server_path}/{file}" for file in self.filenames]
+        if self.minio_server_path.endswith("/"):
+            string = self.minio_server_path[:-1]
+        uploaded_files_link = [f"{string}/{server_path}/{file}" for file in self.filenames]
         return uploaded_files_link
 

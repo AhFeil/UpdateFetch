@@ -57,17 +57,19 @@ else:
 
 
 # 一般无须改动的变量
-version_filename = 'version.json'   # 将来把这个去掉，与下面的合一
-version_deque_filename = 'version_deque.json'   # 用于上传后，清楚旧版本的
-items_filename = 'items.yaml'
+version_file = 'version.json'   # 将来把这个去掉，与下面的合一
+version_deque_file = 'version_deque.json'   # 用于上传后，清楚旧版本的
+latest_version_link_file = 'latest_link.json'   # 用于反代时搜索最新版的链接
+items_file = 'items.yaml'   # 保存下载项目和其配置的文件
 minio_server = "http://" + args.minio_server + "/"  # minio 的网址
 
 abs_td_path = os.path.abspath(temp_download_dir)
 abs_data_path = os.path.abspath(data_dir)
 # 记录版本的文件的路径
-version_file_path = os.path.join(abs_data_path, version_filename)
-version_deque_file_path = os.path.join(abs_data_path, version_deque_filename)
-items_file_path = os.path.join(abs_data_path, items_filename)
+version_file_path = os.path.join(abs_data_path, version_file)
+version_deque_file_path = os.path.join(abs_data_path, version_deque_file)
+latest_version_link_filepath = os.path.join(abs_data_path, latest_version_link_file)
+items_file_path = os.path.join(abs_data_path, items_file)
 # 若文件不存在就先创建空文件
 if not os.path.exists(version_file_path):
     with open(version_file_path, 'w', encoding='utf-8') as f:
@@ -86,6 +88,11 @@ if not os.path.exists(version_deque_file_path):
         # deque 无法保存到 JSON 中，必须先转化为 list
         for_save_sample_version_deque = {key: list(value) for key, value in sample_version_deque.items()}
         json.dump(for_save_sample_version_deque, f)
+if not os.path.exists(latest_version_link_filepath):
+    with open(latest_version_link_filepath, 'w', encoding='utf-8') as f:
+        # 记录版本的文件，就是键值对，项目名对应当前版本，都是字符串
+        sample_latest = {"naiveproxy":["http://127.0.0.1/", "http://1.1.1.1/", "http://8.8.8.8/"], "xray":["http://127.0.0.1/", "http://1.1.1.1/"]}
+        json.dump(sample_latest, f)
 
 yaml = ruamel.yaml.YAML()
 if not os.path.exists(items_file_path):

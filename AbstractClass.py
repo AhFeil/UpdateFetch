@@ -121,6 +121,18 @@ class AbstractUploader(ABC):
     def clear(self, filename):
         """清理旧版本"""
         raise NotImplementedError
+        
+    @abstractmethod
+    def get_uploaded_files_link(self):
+        """获取文件的下载链接"""
+        raise NotImplementedError
+
+    def get_links_dict(self):
+        """将本次的 item 下载的所有文件的链接都放入列表，作为项目名的值，用于反代时路由"""
+        links = self.get_uploaded_files_link()
+        name = os.path.basename(self.filepaths[0]).split('-',1)[0]
+        dictionary = {name: links}
+        return dictionary
 
     def run(self):
         """调用以上命令，串联工作流程"""
@@ -141,12 +153,7 @@ class AbstractUploader(ABC):
             self.version_deque[self.item_name] = temp_deque
         
         self.clear(self.oldVersionCount)   # 当前还没想好怎么指定特别项目保留的版本，先用默认的
-        
-    
-    @abstractmethod
-    def get_uploaded_files_link(self):
-        """获取文件的下载链接"""
-        raise NotImplementedError
+
 
     def save_version_deque(self):
         """保存内存中的版本信息到文件中"""
