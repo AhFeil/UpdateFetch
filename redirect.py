@@ -20,9 +20,16 @@ for i in ARCH_LIST:
 for i in SYSTEM_LIST:
     ALL_SYSTEM.update(i)
 
-with open(latest_version_link_filepath, 'r', encoding='utf-8') as f:
-    items_link = json.load(f)
+# with open(latest_version_link_filepath, 'r', encoding='utf-8') as f:
+#     items_link = json.load(f)
 
+def update_link():
+    """其实就是重新读取一次文件，更新变量"""
+    with open(latest_version_link_filepath, 'r', encoding='utf-8') as f:
+        items_link = json.load(f)
+    return items_link
+
+items_link = update_link()
 
 # 预先编写好的函数，根据发来的网址返回另一个对应的网址
 def redirect(url):
@@ -31,6 +38,7 @@ def redirect(url):
     version_no_exist = "https://example.com"
     check = "https://example.com"
 
+    global items_link
     # 从网址中得到在最后的 path
     # path = url.rsplit("/", 1)[-1]
     path = url
@@ -39,6 +47,7 @@ def redirect(url):
     links = items_link.get(name)
     if not links:  # 若压根不存在，也就不用执行下面的了
         print(f"this file {name} does not exist")
+        items_link = update_link()   # 更新，也许就有了，第二次查询的时候就能正常跳转了
         return app_no_exist
     if len(links) == 1:  # 若只对应一个网址，直接返回
         return links[0]
@@ -91,6 +100,7 @@ def redirect(url):
     if real_path:
         return real_path
     else:
+        items_link = update_link()
         return version_no_exist
 
 
