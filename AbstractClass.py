@@ -4,6 +4,8 @@ import json
 from collections import deque
 from abc import ABC, abstractmethod
 
+import ruamel.yaml
+
 
 class AbstractDownloader(ABC):
     """描述下载所有网站都需要的内容"""
@@ -86,12 +88,13 @@ class AbstractDownloader(ABC):
         print("Downloader: Have saved version")
 
     def __del__(self):
+        # 这里要判断，应该在正确运行之后，才修改，如果中间出错，不修改
         self.save_version()
 
 
 class AbstractUploader(ABC):
     """将文件上传，先指定用的软件路径和上传的位置"""
-    def __init__(self, app, server_path, version_deque_file):
+    def __init__(self, app, server_path, version_deque_file, retained_version_file):
         self.server_path = server_path
         self.item_upload_path = ""
         self.app = app
@@ -100,11 +103,17 @@ class AbstractUploader(ABC):
         self.filenames = []
         self.oldVersionCount = 2   # 保留几个旧版本，不含最新版本
         self.version_deque_file = version_deque_file
+        self.retained_version_file = retained_version_file
+
         with open(self.version_deque_file, 'r', encoding='utf-8') as f:
             version_list = json.load(f)
             self.version_deque = {key: deque(value) for key, value in version_list.items()}
             # self.version_deque["sample_project"].appendleft("v0.03")
             # print(self.version_deque)
+        yaml = ruamel.yaml.YAML()
+        with open(self.retained_version_file, 'r', encoding='utf-8') as f:
+            self.retained_version = yaml.load(f)
+
 
     def import_config(self, filepaths, item_name, latest_version):
         self.filepaths = filepaths
@@ -152,7 +161,7 @@ class AbstractUploader(ABC):
             temp_deque.appendleft(self.latest_version)
             self.version_deque[self.item_name] = temp_deque
         
-        self.clear(self.oldVersionCount)   # 当前还没想好怎么指定特别项目保留的版本，先用默认的
+        self.clear(self.oldVersionCount)   # 当前还没想好怎么指定特别项目保留的版本数量，先用默认的
 
 
     def save_version_deque(self):

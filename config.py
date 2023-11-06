@@ -57,6 +57,7 @@ else:
 # 一般无须改动的变量
 version_file = 'version.json'   # 将来把这个去掉，与下面的合一
 version_deque_file = 'version_deque.json'   # 用于上传后，清楚旧版本的
+retained_version_file = 'retained_version.yaml'   # 用于存储某些软件能保留的特定版本
 latest_version_link_file = 'latest_link.json'   # 用于反代时搜索最新版的链接
 items_file = 'items.yaml'   # 保存下载项目和其配置的文件
 minio_server = "http://" + configs['minio_server'] + "/"  # minio 的网址
@@ -66,6 +67,7 @@ abs_data_path = os.path.abspath(data_dir)
 # 记录版本的文件的路径
 version_file_path = os.path.join(abs_data_path, version_file)
 version_deque_file_path = os.path.join(abs_data_path, version_deque_file)
+retained_version_file_path = os.path.join(abs_data_path, retained_version_file)
 latest_version_link_filepath = os.path.join(abs_data_path, latest_version_link_file)
 items_file_path = os.path.join(abs_data_path, items_file)
 # 若文件不存在就先创建空文件
@@ -92,11 +94,17 @@ if not os.path.exists(latest_version_link_filepath):
         sample_latest = {"naiveproxy":["http://127.0.0.1/", "http://1.1.1.1/", "http://8.8.8.8/"], "xray":["http://127.0.0.1/", "http://1.1.1.1/"]}
         json.dump(sample_latest, f)
 
+if not os.path.exists(retained_version_file_path):
+    with open(retained_version_file_path, "w", encoding='utf-8') as f:
+        retained_version = {"sample_project": ["v0.01", "v0.02"]}   # 格式为：每个 item 的 item name 作键，要保留的版本列表作值
+        yaml.dump(retained_version, f)
+
 if not os.path.exists(items_file_path):
     # 可以搞个示例文件，如果不存在，就拷贝一份
     sys.exit("Warning! There is no items config file. exit.")
 else:
     with open(items_file_path, "r", encoding='utf-8') as f:
+        # 增加功能，检查格式有无错误
         items = yaml.load(f)
 
 logging.basicConfig(

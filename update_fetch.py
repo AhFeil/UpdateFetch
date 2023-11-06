@@ -10,6 +10,7 @@ down_app = config.curl_path
 download_dir = config.temp_download_dir
 version_file = config.version_file_path
 version_deque_file = config.version_deque_file_path
+retained_version_file = config.retained_version_file_path
 minio_server = config.minio_server
 
 with open(config.latest_version_link_filepath, 'r', encoding='utf-8') as f:
@@ -20,7 +21,7 @@ minio_bucket_path = config.minio_host_alias + '/' + config.bucket
 
 # 实例化
 github_downloader = GithubDownloader(down_app, download_dir, version_file)
-minio_uploader = MinioUploader(up_app, minio_bucket_path, version_deque_file, minio_server)
+minio_uploader = MinioUploader(up_app, minio_bucket_path, version_deque_file, retained_version_file, minio_server)
 
 # 使用
 for item_name, item in config.items.items():

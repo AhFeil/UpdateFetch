@@ -61,8 +61,8 @@ class GithubDownloader(AbstractDownloader):
 
 class MinioUploader(AbstractUploader):
     """上传到 minio"""
-    def __init__(self, app, server_path, version_deque_file, minio_server_path):
-        super().__init__(app, server_path, version_deque_file)
+    def __init__(self, app, server_path, version_deque_file, retained_version_file, minio_server_path):
+        super().__init__(app, server_path, version_deque_file, retained_version_file)
         # 由于 minio 客户端用的时候，是预先添加服务端，使用的时候，不需要真正的网址，不方便返回下载链接
         # 这里添加上真正的网址
         self.minio_server_path = minio_server_path
@@ -77,6 +77,10 @@ class MinioUploader(AbstractUploader):
 
         if len(self.version_deque[self.item_name]) > oldVersionCount+1:
             old_version = self.version_deque[self.item_name].pop()
+            if old_version in self.retained_version[self.item_name]:
+                print(f"{self.item_name} has a retained version: {old_version}, so it will not be removed")
+                return
+            
             result = subprocess.run([self.app, 'find', self.item_upload_path, "--name", f"*{old_version}.*"], capture_output=True, text=True)
             old_filenames = result.stdout
             filenames = old_filenames.split('\n')[:-1]
