@@ -1,6 +1,7 @@
 # self
 data/
 temp_download/
+config.yaml
 
 # ---> Python
 # Byte-compiled / optimized / DLL files
