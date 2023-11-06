@@ -20,8 +20,6 @@ for i in ARCH_LIST:
 for i in SYSTEM_LIST:
     ALL_SYSTEM.update(i)
 
-# with open(latest_version_link_filepath, 'r', encoding='utf-8') as f:
-#     items_link = json.load(f)
 
 def update_link():
     """其实就是重新读取一次文件，更新变量"""

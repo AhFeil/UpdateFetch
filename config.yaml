@@ -1,0 +1,5 @@
+curl_path: curl         # curl 二进制程序的路径
+minio_server: 88.214.22.106:9000   # minio 服务端的 API 地址，必须是这种形式，可以用域名，但不能带 http 
+minio_client_path: mc   # mc 二进制程序的路径
+minio_host_alias: local # mc 添加主机时，的 ALIAS
+bucket: file            # mc 上传时，要放到哪个 bucket

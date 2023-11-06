@@ -13,16 +13,14 @@ import ruamel.yaml
 
 parser = argparse.ArgumentParser(description="Your script description")
 # 添加你想要接收的命令行参数
-parser.add_argument('--minio_server', required=True, help='minio server domain or ip and port')   # ip:port
+parser.add_argument('--config', required=False, default='./config.yaml', help='minio server domain or ip and port')   # ip:port
 # 解析命令行参数
 args = parser.parse_args()
 
-# 需要定义的变量，但在下面定义
-curl_path = ''
-minio_client_path = ''   # mc 二进制程序的路径
-minio_host_alias = ''   # mc 添加主机时，的 ALIAS
-bucket = ''   # mc 上传时，要放到哪个 bucket
-
+# 读取 config.yaml 中的参数
+yaml = ruamel.yaml.YAML()
+with open(args.config, 'r', encoding='utf-8') as f:
+    configs = yaml.load(f)
 
 class Environment(Enum):
     WINDOWS = 1
@@ -45,12 +43,12 @@ if system == 'Windows':
 elif system == 'Linux':
     # 处于生产环境  
     ENVIRONMENT = Environment.LINUX
-    curl_path = 'curl'
+    curl_path = configs['curl_path']
     temp_download_dir = './temp_download' # 软件临时下载到这里，等上传之后，再删除
     data_dir = './data'                   # 保存记录文件的目录
-    minio_client_path = 'mc'
-    minio_host_alias = 'local'
-    bucket = 'file'
+    minio_client_path = configs['minio_client_path']
+    minio_host_alias = configs['minio_host_alias']
+    bucket = configs['bucket']
 else:
     ENVIRONMENT = Environment.OTHER
     sys.exit('Unknown system.')
@@ -61,7 +59,7 @@ version_file = 'version.json'   # 将来把这个去掉，与下面的合一
 version_deque_file = 'version_deque.json'   # 用于上传后，清楚旧版本的
 latest_version_link_file = 'latest_link.json'   # 用于反代时搜索最新版的链接
 items_file = 'items.yaml'   # 保存下载项目和其配置的文件
-minio_server = "http://" + args.minio_server + "/"  # minio 的网址
+minio_server = "http://" + configs['minio_server'] + "/"  # minio 的网址
 
 abs_td_path = os.path.abspath(temp_download_dir)
 abs_data_path = os.path.abspath(data_dir)
@@ -94,7 +92,6 @@ if not os.path.exists(latest_version_link_filepath):
         sample_latest = {"naiveproxy":["http://127.0.0.1/", "http://1.1.1.1/", "http://8.8.8.8/"], "xray":["http://127.0.0.1/", "http://1.1.1.1/"]}
         json.dump(sample_latest, f)
 
-yaml = ruamel.yaml.YAML()
 if not os.path.exists(items_file_path):
     # 可以搞个示例文件，如果不存在，就拷贝一份
     sys.exit("Warning! There is no items config file. exit.")
