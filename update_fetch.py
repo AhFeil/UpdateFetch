@@ -1,7 +1,8 @@
 import os
+import sys
 import json
 
-from ConcreteClass import GithubDownloader, MinioUploader
+from ConcreteClass import GithubDownloader, FDroidDownloader, MinioUploader
 import config
 
 
@@ -21,13 +22,21 @@ minio_bucket_path = config.minio_host_alias + '/' + config.bucket
 
 # 实例化
 github_downloader = GithubDownloader(down_app, download_dir, version_file)
+fdroid_downloader = FDroidDownloader(down_app, download_dir, version_file)
 minio_uploader = MinioUploader(up_app, minio_bucket_path, version_deque_file, retained_version_file, minio_server)
 
 # 使用
 for item_name, item in config.items.items():
     # github_downloader.import_config(item_name, item, latest_version_for_test = "v116.0.5845.92-2")   # 测试自动删除旧版本用
-    github_downloader.import_config(item_name, item)
-    filepaths, latest_version = github_downloader.run()
+    if item['website'] == "github":
+        github_downloader.import_config(item_name, item)
+        filepaths, latest_version = github_downloader.run()
+    elif item['website'] == "fdroid":
+        fdroid_downloader.import_config(item_name, item)
+        filepaths, latest_version = fdroid_downloader.run()
+    else:
+        sys.exit("unknow website")
+    
     if not filepaths:   # 无须更新
         pass
     else:

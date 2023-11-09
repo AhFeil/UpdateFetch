@@ -65,7 +65,6 @@ class FDroidDownloader(AbstractDownloader):
     def __init__(self, app, download_dir, version_file):
         super().__init__(app, download_dir, version_file)
         self.architectures = enumerate(['x86_64', 'x86', 'arm64-v8a', 'armabi-v7a'])
-        print(self.architectures)
 
     def import_config(self, item_name, item_config, latest_version_for_test = ""):
         # super().import_config(item_name, item_config)
@@ -91,8 +90,7 @@ class FDroidDownloader(AbstractDownloader):
         div_element = soup.find("div", class_="package-version-header")
         version_text = div_element.b.text.strip()
         number_text = div_element.b.next_sibling.strip()
-        version_text = version_text[7:]
-        print(version_text, number_text)
+        version_text = version_text[8:]
         number_text = number_text[1:-1]
         return number_text
 
