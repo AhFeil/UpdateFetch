@@ -1,5 +1,6 @@
 import json
 import requests
+from bs4 import BeautifulSoup
 import subprocess
 from collections import deque
 
@@ -8,7 +9,7 @@ from AbstractClass import AbstractDownloader, AbstractUploader
 
 class GithubDownloader(AbstractDownloader):
     """专门下载 GitHub 项目 release 中的内容"""
-    def __int__(self, app, download_dir, version_file):
+    def __init__(self, app, download_dir, version_file):
         super().__init__(app, download_dir, version_file)
         self.item_name = ""
         self.name = ""
@@ -57,6 +58,60 @@ class GithubDownloader(AbstractDownloader):
             download_urls.append(download_url)
             print(download_url)
         return download_urls
+
+
+class FDroidDownloader(AbstractDownloader):
+    """专门下载 f-droid.org 的 apk"""
+    def __init__(self, app, download_dir, version_file):
+        super().__init__(app, download_dir, version_file)
+        self.architectures = enumerate(['x86_64', 'x86', 'arm64-v8a', 'armabi-v7a'])
+        print(self.architectures)
+
+    def import_config(self, item_name, item_config, latest_version_for_test = ""):
+        # super().import_config(item_name, item_config)
+        self.item_name = item_name
+
+        self.name = item_config["name"]
+        self.website = item_config["website"]
+        self.project_name = item_config["project_name"]
+        self.architecture = item_config["architecture"]
+        self.offset_archs = [(n, arch) for n, arch in self.architectures if arch in self.architecture]
+        self.url = f"https://f-droid.org/packages/{self.project_name}/"
+        self.dl_url = f"https://f-droid.org/repo/{self.project_name}"
+        # 这一项控制最新版，可以用于测试，通过修改此值，下载不同版本，但只能用于一个 item
+        self.latest_version_for_test = latest_version_for_test
+
+    def get_latest_version(self):
+        # 获取最新版本号
+        # 发送 HTTP 请求并获取 HTML 内容
+        response = requests.get(self.url)
+        html_content = response.text
+        soup = BeautifulSoup(html_content, "html.parser")
+        # 查找指定元素
+        div_element = soup.find("div", class_="package-version-header")
+        version_text = div_element.b.text.strip()
+        number_text = div_element.b.next_sibling.strip()
+        version_text = version_text[7:]
+        print(version_text, number_text)
+        number_text = number_text[1:-1]
+        return number_text
+
+    def format_url(self, latest_version):
+        # 构造下载链接
+        download_urls = []
+        
+        for n, architecture in self.offset_archs:
+            latest_version = str(int(latest_version) - n)
+            download_url = self.dl_url + '_' + latest_version + '.apk'
+            download_urls.append(download_url)
+            print(download_url)
+        return download_urls
+
+    def format_filename(self, latest_version):
+        """生成文件名，用以保存文件"""
+        filenames = [f'{self.name}-{architecture}-{latest_version}.apk'
+                          for _, architecture in self.offset_archs]
+        return filenames
 
 
 class MinioUploader(AbstractUploader):

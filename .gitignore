@@ -2,6 +2,7 @@
 data/
 temp_download/
 config.yaml
+test_downloader.py
 
 # ---> Python
 # Byte-compiled / optimized / DLL files
