@@ -45,6 +45,7 @@ class GithubDownloader(AbstractDownloader):
         response = requests.get(url)
         data = json.loads(response.text)
         latest_version = data["tag_name"]
+        latest_version = latest_version.replace('/', r'%2F')
         return latest_version
 
     def format_url(self, latest_version):
@@ -130,7 +131,7 @@ class MinioUploader(AbstractUploader):
 
         if len(self.version_deque[self.item_name]) > oldVersionCount+1:
             old_version = self.version_deque[self.item_name].pop()
-            if old_version in self.retained_version[self.item_name]:
+            if old_version in self.retained_version.get(self.item_name, []):
                 print(f"{self.item_name} has a retained version: {old_version}, so it will not be removed")
                 return
             

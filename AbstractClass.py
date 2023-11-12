@@ -50,7 +50,8 @@ class AbstractDownloader(ABC):
 
     def format_filename(self, latest_version):
         """生成文件名，用以保存文件"""
-        filenames = [f'{self.name}-{system}-{architecture}-{latest_version}.{suffix_name}'
+        latest_version = latest_version.replace(r'%2F', '-')   # 应对 hys2 情况
+        filenames = [f'{self.name}-{system}-{architecture}-{latest_version}{suffix_name}'
                           for system, suffix_name, architecture in self.system_archs]
         return filenames
 
@@ -73,7 +74,7 @@ class AbstractDownloader(ABC):
         
         if self.check_down_or_not(latest_version):
             urls = self.format_url(latest_version)
-            filenames = self.format_filename(latest_version)
+            filenames = self.format_filename(latest_version[:])
             for download_url, filename in zip(urls, filenames):
                 filepaths.append(self.downloading(download_url, filename))
             return filepaths, latest_version
