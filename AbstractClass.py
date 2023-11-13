@@ -10,13 +10,9 @@ import ruamel.yaml
 class AbstractDownloader(ABC):
     """描述下载所有网站都需要的内容"""
 
-    def __init__(self, app, download_dir, version_file):
+    def __init__(self, app, download_dir):
         self.app = app
         self.download_dir = download_dir
-        self.version_file = version_file
-        # 加载版本信息
-        with open(self.version_file, 'r', encoding='utf-8') as f:
-            self.version_data = json.load(f)
 
     @abstractmethod
     def import_config(self, item_name, item_config):
@@ -40,7 +36,6 @@ class AbstractDownloader(ABC):
             print(f"version is same for {self.item_name}")
             return False
         else:
-            self.version_data[self.item_name] = latest_version
             return True
 
     @abstractmethod
@@ -77,20 +72,12 @@ class AbstractDownloader(ABC):
             filenames = self.format_filename(latest_version[:])
             for download_url, filename in zip(urls, filenames):
                 filepaths.append(self.downloading(download_url, filename))
+            # 更新记录的最新版本
+            self.version_data[self.item_name] = latest_version
             return filepaths, latest_version
         else:
             print(f"Current version for {self.name} is up to date.")
             return filepaths, latest_version
-
-    def save_version(self):
-        """保存内存中的版本信息到文件中"""
-        with open(self.version_file, 'w', encoding='utf-8') as f:
-            json.dump(self.version_data, f, ensure_ascii=False)
-        print("Downloader: Have saved version")
-
-    def __del__(self):
-        # 这里要判断，应该在正确运行之后，才修改，如果中间出错，不修改
-        self.save_version()
 
 
 class AbstractUploader(ABC):

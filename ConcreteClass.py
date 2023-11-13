@@ -9,8 +9,8 @@ from AbstractClass import AbstractDownloader, AbstractUploader
 
 class GithubDownloader(AbstractDownloader):
     """专门下载 GitHub 项目 release 中的内容"""
-    def __init__(self, app, download_dir, version_file):
-        super().__init__(app, download_dir, version_file)
+    def __init__(self, app, download_dir):
+        super().__init__(app, download_dir)
         self.item_name = ""
         self.name = ""
         self.website = ""
@@ -21,9 +21,10 @@ class GithubDownloader(AbstractDownloader):
         self.system_archs = []
         self.latest_version_for_test = ""
 
-    def import_config(self, item_name, item_config, latest_version_for_test = ""):
+    def import_config(self, item_name, item_config, version_data, latest_version_for_test = ""):
         # super().import_config(item_name, item_config)
         self.item_name = item_name
+        self.version_data = version_data
 
         self.name = item_config["name"]
         self.website = item_config["website"]
@@ -63,13 +64,14 @@ class GithubDownloader(AbstractDownloader):
 
 class FDroidDownloader(AbstractDownloader):
     """专门下载 f-droid.org 的 apk"""
-    def __init__(self, app, download_dir, version_file):
-        super().__init__(app, download_dir, version_file)
+    def __init__(self, app, download_dir):
+        super().__init__(app, download_dir)
         self.architectures = enumerate(['x86_64', 'x86', 'arm64-v8a', 'armabi-v7a'])
 
-    def import_config(self, item_name, item_config, latest_version_for_test = ""):
+    def import_config(self, item_name, item_config, version_data, latest_version_for_test = ""):
         # super().import_config(item_name, item_config)
         self.item_name = item_name
+        self.version_data = version_data
 
         self.name = item_config["name"]
         self.website = item_config["website"]
