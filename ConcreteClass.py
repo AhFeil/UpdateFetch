@@ -149,5 +149,6 @@ class MinioUploader(AbstractUploader):
         if self.minio_server_path.endswith("/"):
             string = self.minio_server_path[:-1]
         uploaded_files_link = [f"{string}/{server_path}/{file}" for file in self.filenames]
+        self.filenames = []   # 否则，前个软件下载的链接，会到后面的里
         return uploaded_files_link
 

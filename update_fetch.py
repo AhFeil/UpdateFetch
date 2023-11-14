@@ -48,8 +48,8 @@ for item_name, item in config.items.items():
     else:
         minio_uploader.import_config(filepaths, item_name, latest_version)
         minio_uploader.run()
-        latest_link = minio_uploader.get_links_dict()
-        latest_links.update(latest_link)
+        name_and_latest_link = minio_uploader.get_links_dict()
+        latest_links.update(name_and_latest_link)
         # print(filepaths)
         # 删除本地文件
         for filepath in filepaths:
