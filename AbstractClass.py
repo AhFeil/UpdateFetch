@@ -160,4 +160,5 @@ class AbstractUploader(ABC):
         print("Uploader: Have saved version_deque ")
 
     def __del__(self):
-        self.save_version_deque()
+        # self.save_version_deque()
+        pass

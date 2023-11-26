@@ -33,5 +33,6 @@ class AutoCallerFactory:   # 先只给下载器用，以后有需要，搞继承
 
     def __del__(self):
     # 这里要判断，应该在正确运行之后，才修改，如果中间出错，不修改
-        self.save_version()
+        # self.save_version()
+        pass
 

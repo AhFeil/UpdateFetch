@@ -45,6 +45,8 @@ class GithubDownloader(AbstractDownloader):
         url = f"https://api.github.com/repos/{self.project_name}/releases/latest"
         response = requests.get(url)
         data = json.loads(response.text)
+        if data.get('message'):
+            raise Exception('API_LIMIT')   # 测试时候，触发 API rate limit exceeded for machine IP 了
         latest_version = data["tag_name"]
         latest_version = latest_version.replace('/', r'%2F')
         return latest_version

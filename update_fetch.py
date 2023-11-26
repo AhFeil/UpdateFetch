@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import datetime
 
 from ConcreteClass import GithubDownloader, FDroidDownloader, MinioUploader
 from AutoCallerFactory import AutoCallerFactory
@@ -30,33 +31,47 @@ factory.register_class("fdroid", FDroidDownloader)
 minio_uploader = MinioUploader(up_app, minio_bucket_path, version_deque_file, retained_version_file, minio_server)
 
 # 使用
-for item_name, item in config.items.items():
-    # github_downloader.import_config(item_name, item, latest_version_for_test = "v116.0.5845.92-2")   # 测试自动删除旧版本用
-    instance_name = item['website']
-    filepaths, latest_version = factory.call_instance(instance_name, item_name, item)
-    # if item['website'] == "github":
-    #     github_downloader.import_config(item_name, item)
-    #     filepaths, latest_version = github_downloader.run()
-    # elif item['website'] == "fdroid":
-    #     fdroid_downloader.import_config(item_name, item)
-    #     filepaths, latest_version = fdroid_downloader.run()
-    # else:
-    #     sys.exit("unknow website")
-    
-    if not filepaths:   # 无须更新
-        pass
-    else:
-        minio_uploader.import_config(filepaths, item_name, latest_version)
-        minio_uploader.run()
-        name_and_latest_link = minio_uploader.get_links_dict()
-        latest_links.update(name_and_latest_link)
-        # print(filepaths)
-        # 删除本地文件
-        for filepath in filepaths:
-            os.remove(filepath)
-    print("\n" + '-' * 33)
-    # break   # 测试自动删除旧版本时打开，只跑第一回
+def update():
+    today = datetime.datetime.now()
+    today_date = f"本次运行时间为 {today.year}-{today.month}-{today.day}"
+    print(today_date)
+    for item_name, item in config.items.items():
+        # github_downloader.import_config(item_name, item, latest_version_for_test = "v116.0.5845.92-2")   # 测试自动删除旧版本用
+        instance_name = item['website']
+        try:
+            filepaths, latest_version = factory.call_instance(instance_name, item_name, item)
+        except Exception('API_LIMIT'):
+            print("API rate limit exceeded for machine IP")
+            filepaths = []
+        # if item['website'] == "github":
+        #     github_downloader.import_config(item_name, item)
+        #     filepaths, latest_version = github_downloader.run()
+        # elif item['website'] == "fdroid":
+        #     fdroid_downloader.import_config(item_name, item)
+        #     filepaths, latest_version = fdroid_downloader.run()
+        # else:
+        #     sys.exit("unknow website")
+        
+        if not filepaths:   # 无须更新
+            pass
+        else:
+            minio_uploader.import_config(filepaths, item_name, latest_version)
+            minio_uploader.run()
+            name_and_latest_link = minio_uploader.get_links_dict()
+            latest_links.update(name_and_latest_link)
+            # print(filepaths)
+            # 删除本地文件
+            for filepath in filepaths:
+                os.remove(filepath)
+        print("\n" + '-' * 33)
+        # break   # 测试自动删除旧版本时打开，只跑第一回
 
-# 保存反代用链接
-with open(config.latest_version_link_filepath, 'w', encoding='utf-8') as f:
-    json.dump(latest_links, f)
+    factory.save_version()   # 不知原因，执行时，报错，找不到 open ，因此手动调用
+    minio_uploader.save_version_deque()
+    # 保存反代用链接
+    with open(config.latest_version_link_filepath, 'w', encoding='utf-8') as f:
+        json.dump(latest_links, f)
+
+if __name__ == '__main__':
+    update()
+
