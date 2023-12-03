@@ -58,9 +58,13 @@ class GithubDownloader(AbstractDownloader):
 
     def format_url(self, latest_version):
         # 构造下载链接
+        sample_url = self.sample_url
         download_urls = []
+        if sample_url[0] == '~':
+            front_url = f"https://github.com/{self.project_name}/releases/download"
+            sample_url = sample_url.replace('~', front_url)
         for ((_, _), (sys, arch), suffix_name) in self.system_archs:
-            download_url = self.sample_url.replace('${tag}', latest_version).\
+            download_url = sample_url.replace('${tag}', latest_version).\
                                replace('${ARCHITECTURE}', arch).\
                                replace('${system}', sys).\
                                replace('${suffix_name}', suffix_name)

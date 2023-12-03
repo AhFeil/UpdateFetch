@@ -62,7 +62,7 @@ class AbstractDownloader(ABC):
         """调用以上命令，串联工作流程"""
         name = self.name
         filepaths = []   # 保存下载后，文件的路径
-        if self.latest_version_for_test:
+        if self.latest_version_for_test != 'latest':
             latest_version = self.get_latest_version_for_test()
         else:
             latest_version = self.get_latest_version()

@@ -44,14 +44,6 @@ def update():
         except Exception('API_LIMIT'):
             print("-----API rate limit exceeded for machine IP-----")
             filepaths = []
-        # if item['website'] == "github":
-        #     github_downloader.import_config(item_name, item)
-        #     filepaths, latest_version = github_downloader.run()
-        # elif item['website'] == "fdroid":
-        #     fdroid_downloader.import_config(item_name, item)
-        #     filepaths, latest_version = fdroid_downloader.run()
-        # else:
-        #     sys.exit("unknow website")
         
         if not filepaths:   # 无须更新
             pass

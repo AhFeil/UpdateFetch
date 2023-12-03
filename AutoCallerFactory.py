@@ -40,3 +40,16 @@ class AutoCallerFactory:   # 先只给下载器用，以后有需要，搞继承
         # self.save_version()
         pass
 
+
+class Test4AutoCallerFactory(AutoCallerFactory):
+    def call_instance(self, name, item_name, item, latest_version_for_test):
+        if name in self.instances:
+            instance = self.instances[name]
+            if name == 'github':
+                instance.import_config(item_name, item, self.version_data, self.GithubAPI, latest_version_for_test)
+            else:
+                instance.import_config(item_name, item, self.version_data, latest_version_for_test)
+            filepaths, latest_version = instance.run()
+            return filepaths, latest_version
+        else:
+            raise ValueError(f"No instance found with name '{name}'.")
