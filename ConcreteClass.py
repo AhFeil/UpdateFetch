@@ -96,7 +96,8 @@ class FDroidDownloader(AbstractDownloader):
         self.name = item_config["name"]
         self.website = item_config["website"]
         self.project_name = item_config["project_name"]
-        self.architecture = item_config["architecture"]
+        self.architecture = item_config["architecture"].values()
+        self.search_unified_arch = {value: key for key, value in item_config["architecture"].items()}   # 标准化的架构名
         self.url = f"https://f-droid.org/packages/{self.project_name}/"
         self.dl_url = f"https://f-droid.org/repo/{self.project_name}"
         # 这一项控制最新版，可以用于测试，通过修改此值，下载不同版本，但只能用于一个 item
@@ -166,7 +167,9 @@ class FDroidDownloader(AbstractDownloader):
     
     def format_filename(self, latest_version):
         """生成文件名，用以保存文件"""
-        filenames = [f'{self.name}-{arch}-{version_name}.apk'
+        
+
+        filenames = [f'{self.name}-{self.search_unified_arch[arch]}-{version_name}.apk'
                           for version_name, _, arch in self.versions]
         return filenames
 
