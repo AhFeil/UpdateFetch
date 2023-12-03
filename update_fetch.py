@@ -15,6 +15,7 @@ version_file = config.version_file_path
 version_deque_file = config.version_deque_file_path
 retained_version_file = config.retained_version_file_path
 minio_server = config.minio_server
+GithubAPI = config.GithubAPI
 
 with open(config.latest_version_link_filepath, 'r', encoding='utf-8') as f:
     latest_links = json.load(f)
@@ -25,7 +26,7 @@ minio_bucket_path = config.minio_host_alias + '/' + config.bucket
 # 实例化
 # github_downloader = GithubDownloader(down_app, download_dir, version_file)
 # fdroid_downloader = FDroidDownloader(down_app, download_dir, version_file)
-factory = AutoCallerFactory(down_app, download_dir, version_file)
+factory = AutoCallerFactory(down_app, download_dir, version_file, GithubAPI)
 factory.register_class("github", GithubDownloader)
 factory.register_class("fdroid", FDroidDownloader)
 minio_uploader = MinioUploader(up_app, minio_bucket_path, version_deque_file, retained_version_file, minio_server)
@@ -41,7 +42,7 @@ def update():
         try:
             filepaths, latest_version = factory.call_instance(instance_name, item_name, item)
         except Exception('API_LIMIT'):
-            print("API rate limit exceeded for machine IP")
+            print("-----API rate limit exceeded for machine IP-----")
             filepaths = []
         # if item['website'] == "github":
         #     github_downloader.import_config(item_name, item)

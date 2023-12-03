@@ -52,7 +52,7 @@ class AbstractDownloader(ABC):
 
     def downloading(self, download_url, filename):
         """下载"""
-        # download_dir 是导入的一次内容，而不是在类中二次生成的，所以直接用
+        # download_dir 是导入的一次内容，而不是在类中二次生成的，所以直接用，
         filepath = os.path.join(self.download_dir, filename)
         # 下载软件
         subprocess.run([self.app, '-L', '-o', filepath, download_url])

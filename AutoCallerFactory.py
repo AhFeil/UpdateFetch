@@ -4,11 +4,12 @@
 import json
 
 class AutoCallerFactory:   # 先只给下载器用，以后有需要，搞继承，另弄一个上传器用的
-    def __init__(self, app, download_dir, version_file):
+    def __init__(self, app, download_dir, version_file, GithubAPI):
         self.instances = {}
         self.app = app
         self.download_dir = download_dir
         self.version_file = version_file
+        self.GithubAPI = GithubAPI
         # 加载版本信息
         with open(self.version_file, 'r', encoding='utf-8') as f:
             self.version_data = json.load(f)
@@ -19,7 +20,10 @@ class AutoCallerFactory:   # 先只给下载器用，以后有需要，搞继承
     def call_instance(self, name, item_name, item):
         if name in self.instances:
             instance = self.instances[name]
-            instance.import_config(item_name, item, self.version_data)   # 这里 version_data 一直是同一个，也就不用担心之前的分别实例化下载器的问题了
+            if name == 'github':
+                instance.import_config(item_name, item, self.version_data, self.GithubAPI)
+            else:
+                instance.import_config(item_name, item, self.version_data)   # 这里 version_data 一直是同一个，也就不用担心之前的分别实例化下载器的问题了
             filepaths, latest_version = instance.run()
             return filepaths, latest_version
         else:

@@ -21,7 +21,7 @@ class GithubDownloader(AbstractDownloader):
         self.system_archs = []
         self.latest_version_for_test = ""
 
-    def import_config(self, item_name, item_config, version_data, latest_version_for_test = ""):
+    def import_config(self, item_name, item_config, version_data, GithubAPI=None, latest_version_for_test = ""):
         # super().import_config(item_name, item_config)
         self.item_name = item_name
         self.version_data = version_data
@@ -32,7 +32,7 @@ class GithubDownloader(AbstractDownloader):
         self.sample_url = item_config["sample_url"]
         self.system = item_config["system"]
         self.architecture = item_config["architecture"]
-
+        self.GithubAPI = GithubAPI
         # 对应多版本，把每个版本都放入列表 ((formated_sys, formated_arch), (sys, arch), suffix_name)
         self.system_archs = [((formated_sys, formated_arch), (sys, arch), suffix_name) for 
                              formated_sys, (sys, suffix_name) in self.system.items() for 
@@ -44,7 +44,11 @@ class GithubDownloader(AbstractDownloader):
     def get_latest_version(self):
         # 获取最新版本号
         url = f"https://api.github.com/repos/{self.project_name}/releases/latest"
-        response = requests.get(url)
+        headers = {}
+        if self.GithubAPI:
+            headers = {"Authorization": self.GithubAPI['Authorization'],
+                       "X-GitHub-Api-Version": self.GithubAPI['X_GitHub_Api_Version']}
+        response = requests.get(url, headers=headers)
         data = json.loads(response.text)
         if data.get('message'):
             raise Exception('API_LIMIT')   # 测试时候，触发 API rate limit exceeded for machine IP 了

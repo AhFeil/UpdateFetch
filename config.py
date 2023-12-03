@@ -49,6 +49,11 @@ elif system == 'Linux':
     minio_client_path = configs['minio_client_path']
     minio_host_alias = configs['minio_host_alias']
     bucket = configs['bucket']
+    if (X_GitHub_Api_Version := configs.get('X-GitHub-Api-Version')) and (Authorization := configs.get('Authorization')):
+        GithubAPI = {'X_GitHub_Api_Version': X_GitHub_Api_Version, 'Authorization': Authorization}
+    else:
+        GithubAPI = None
+    
 else:
     ENVIRONMENT = Environment.OTHER
     sys.exit('Unknown system.')
