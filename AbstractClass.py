@@ -43,6 +43,11 @@ class AbstractDownloader(ABC):
         """得到下载直链"""
         raise NotImplementedError
 
+    @abstractmethod
+    def check_url(self, download_urls):
+        """检查下载直链是否有效"""
+        raise NotImplementedError
+
     def format_filename(self, latest_version):
         """生成文件名，用以保存文件"""
         latest_version = latest_version.replace(r'%2F', '-')   # 应对 hys2 情况
@@ -62,15 +67,16 @@ class AbstractDownloader(ABC):
         """调用以上命令，串联工作流程"""
         name = self.name
         filepaths = []   # 保存下载后，文件的路径
-        if self.latest_version_for_test != 'latest':
+        if self.latest_version_for_test and self.latest_version_for_test != 'latest':
             latest_version = self.get_latest_version_for_test()
         else:
             latest_version = self.get_latest_version()
         
         if self.check_down_or_not(latest_version):
             urls = self.format_url(latest_version)
+            valid_urls = self.check_url(urls)
             filenames = self.format_filename(latest_version[:])
-            for download_url, filename in zip(urls, filenames):
+            for download_url, filename in zip(valid_urls, filenames):
                 filepaths.append(self.downloading(download_url, filename))
             # 更新记录的最新版本
             self.version_data[self.item_name] = latest_version

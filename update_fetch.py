@@ -37,7 +37,6 @@ def update():
     today_date = f"本次运行时间为 {today.year}-{today.month}-{today.day}"
     print(today_date)
     for item_name, item in config.items.items():   # 这里每个 item 都是一个下载项目
-        # github_downloader.import_config(item_name, item, latest_version_for_test = "v116.0.5845.92-2")   # 测试自动删除旧版本用
         instance_name = item['website']
         try:
             filepaths, latest_version = factory.call_instance(instance_name, item_name, item)
@@ -57,7 +56,6 @@ def update():
             for filepath in filepaths:
                 os.remove(filepath)
         print("\n" + '-' * 33)
-        # break   # 测试自动删除旧版本时打开，只跑第一回
 
     factory.save_version()   # 不知原因，执行时，报错，找不到 open ，因此手动调用
     minio_uploader.save_version_deque()

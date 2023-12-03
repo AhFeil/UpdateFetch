@@ -60,7 +60,6 @@ class GithubDownloader(AbstractDownloader):
         # 构造下载链接
         sample_url = self.sample_url
         download_urls = []
-        valid_download_urls = []
         if sample_url[0] == '~':
             front_url = f"https://github.com/{self.project_name}/releases/download"
             sample_url = sample_url.replace('~', front_url)
@@ -70,14 +69,20 @@ class GithubDownloader(AbstractDownloader):
                                replace('${system}', sys).\
                                replace('${suffix_name}', suffix_name)
             download_urls.append(download_url)
-        # 检测下载链接是否有效。对于 GitHub，如果无效，会返回字符串 "Not Found"
+        return download_urls
+
+    def check_url(self, download_urls):
+        """检查下载直链是否有效"""
+        # 对于 GitHub，如果无效，会返回 404，有效则是 302
+        valid_download_urls = []
         for download_url in download_urls:
-            data = requests.get(download_url)
-            if data.text == "Not Found":
-                print(f"The Download url is invalid: '{download_url}'")
-            else:
+            response = requests.head(download_url)
+            # 通常情况下，200 状态码表示成功
+            if response.status_code == 302:
                 valid_download_urls.append(download_url)
                 print(f"Will Download according this url: '{download_url}'")
+            else:
+                print(f"The Download url is invalid: '{download_url}' with status code {response.status_code}")
         return valid_download_urls
 
 
@@ -154,6 +159,11 @@ class FDroidDownloader(AbstractDownloader):
             print(download_url)
         return download_urls
 
+    def check_url(self, download_urls):
+        """检查下载直链是否有效"""
+        # 对于 FDroid，暂时没检查
+        return download_urls
+    
     def format_filename(self, latest_version):
         """生成文件名，用以保存文件"""
         filenames = [f'{self.name}-{arch}-{version_name}.apk'
@@ -182,7 +192,9 @@ class MinioUploader(AbstractUploader):
             if old_version in self.retained_version.get(self.item_name, []):
                 print(f"{self.item_name} has a retained version: {old_version}, so it will not be removed")
                 return
-            
+            if old_version == self.latest_version:
+                print("old_version == latest_version")
+                return
             result = subprocess.run([self.app, 'find', self.item_upload_path, "--name", f"*{old_version}.*"], capture_output=True, text=True)
             old_filenames = result.stdout
             filenames = old_filenames.split('\n')[:-1]
