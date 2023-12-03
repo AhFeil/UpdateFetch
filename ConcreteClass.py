@@ -60,6 +60,7 @@ class GithubDownloader(AbstractDownloader):
         # 构造下载链接
         sample_url = self.sample_url
         download_urls = []
+        valid_download_urls = []
         if sample_url[0] == '~':
             front_url = f"https://github.com/{self.project_name}/releases/download"
             sample_url = sample_url.replace('~', front_url)
@@ -69,8 +70,15 @@ class GithubDownloader(AbstractDownloader):
                                replace('${system}', sys).\
                                replace('${suffix_name}', suffix_name)
             download_urls.append(download_url)
-            print(download_url)
-        return download_urls
+        # 检测下载链接是否有效。对于 GitHub，如果无效，会返回字符串 "Not Found"
+        for download_url in download_urls:
+            data = requests.get(download_url)
+            if data.text == "Not Found":
+                print(f"The Download url is invalid: '{download_url}'")
+            else:
+                valid_download_urls.append(download_url)
+                print(f"Will Download according this url: '{download_url}'")
+        return valid_download_urls
 
 
 class FDroidDownloader(AbstractDownloader):
