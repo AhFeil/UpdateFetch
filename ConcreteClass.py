@@ -33,9 +33,10 @@ class GithubDownloader(AbstractDownloader):
         self.system = item_config["system"]
         self.architecture = item_config["architecture"]
 
-        # 对应多版本，把每个版本都放入列表
-        self.system_archs = [(system, suffix_name, arch) for system, suffix_name in self.system
-                             for arch in self.architecture]
+        # 对应多版本，把每个版本都放入列表 ((formated_sys, formated_arch), (sys, arch), suffix_name)
+        self.system_archs = [((formated_sys, formated_arch), (sys, arch), suffix_name) for 
+                             formated_sys, (sys, suffix_name) in self.system.items() for 
+                             formated_arch, arch in self.architecture.items()]
         
         # 这一项控制最新版，可以用于测试，通过修改此值，下载不同版本，但只能用于一个 item
         self.latest_version_for_test = latest_version_for_test
@@ -54,10 +55,10 @@ class GithubDownloader(AbstractDownloader):
     def format_url(self, latest_version):
         # 构造下载链接
         download_urls = []
-        for system, suffix_name, architecture in self.system_archs:
+        for ((_, _), (sys, arch), suffix_name) in self.system_archs:
             download_url = self.sample_url.replace('${tag}', latest_version).\
-                               replace('${ARCHITECTURE}', architecture).\
-                               replace('${system}', system).\
+                               replace('${ARCHITECTURE}', arch).\
+                               replace('${system}', sys).\
                                replace('${suffix_name}', suffix_name)
             download_urls.append(download_url)
             print(download_url)
@@ -145,6 +146,8 @@ class MinioUploader(AbstractUploader):
             # 删除旧文件
             for filename in filenames:
                 subprocess.run([self.app, 'rm', filename])
+            print(f"{self.item_name} delete old version {old_version}")
+
 
     def get_uploaded_files_link(self):
         server_path = self.server_path.split("/")[1] + '/' + self.item_name

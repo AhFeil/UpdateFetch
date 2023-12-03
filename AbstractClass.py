@@ -46,8 +46,8 @@ class AbstractDownloader(ABC):
     def format_filename(self, latest_version):
         """生成文件名，用以保存文件"""
         latest_version = latest_version.replace(r'%2F', '-')   # 应对 hys2 情况
-        filenames = [f'{self.name}-{system}-{architecture}-{latest_version}{suffix_name}'
-                          for system, suffix_name, architecture in self.system_archs]
+        filenames = [f'{self.name}-{formated_sys}-{formated_arch}-{latest_version}{suffix_name}'
+                          for ((formated_sys, formated_arch), (_, _), suffix_name) in self.system_archs]
         return filenames
 
     def downloading(self, download_url, filename):
@@ -148,7 +148,7 @@ class AbstractUploader(ABC):
             temp_deque = deque()
             temp_deque.appendleft(self.latest_version)
             self.version_deque[self.item_name] = temp_deque
-        
+        print(f"{self.item_name} new version {self.latest_version} added to version deque")
         self.clear(self.oldVersionCount)   # 当前还没想好怎么指定特别项目保留的版本数量，先用默认的
 
 

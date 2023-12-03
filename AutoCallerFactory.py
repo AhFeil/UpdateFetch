@@ -29,7 +29,7 @@ class AutoCallerFactory:   # 先只给下载器用，以后有需要，搞继承
         """保存内存中的版本信息到文件中"""
         with open(self.version_file, 'w', encoding='utf-8') as f:
             json.dump(self.version_data, f, ensure_ascii=False)
-        print("Downloader: Have saved version")
+        print("Dispatcher of Downloader: Have saved latest version")
 
     def __del__(self):
     # 这里要判断，应该在正确运行之后，才修改，如果中间出错，不修改
