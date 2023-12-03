@@ -83,10 +83,6 @@ class GithubDownloader(AbstractDownloader):
 
 class FDroidDownloader(AbstractDownloader):
     """专门下载 f-droid.org 的 apk"""
-    def __init__(self, app, download_dir):
-        super().__init__(app, download_dir)
-        self.architectures = enumerate(['x86_64', 'x86', 'arm64-v8a', 'armabi-v7a'])
-
     def import_config(self, item_name, item_config, version_data, latest_version_for_test = ""):
         # super().import_config(item_name, item_config)
         self.item_name = item_name
@@ -96,32 +92,63 @@ class FDroidDownloader(AbstractDownloader):
         self.website = item_config["website"]
         self.project_name = item_config["project_name"]
         self.architecture = item_config["architecture"]
-        self.offset_archs = [(n, arch) for n, arch in self.architectures if arch in self.architecture]
         self.url = f"https://f-droid.org/packages/{self.project_name}/"
         self.dl_url = f"https://f-droid.org/repo/{self.project_name}"
         # 这一项控制最新版，可以用于测试，通过修改此值，下载不同版本，但只能用于一个 item
         self.latest_version_for_test = latest_version_for_test
+        self.versions = []   # 由于不同架构的下载地址关联一串不同的数字，所以用这个存放对应关系
 
     def get_latest_version(self):
         # 获取最新版本号
+        versions = []
         # 发送 HTTP 请求并获取 HTML 内容
         response = requests.get(self.url)
         html_content = response.text
+        # with open("./fdroid.html", 'w', encoding='utf-8') as f:
+        #     f.write(html_content)
         soup = BeautifulSoup(html_content, "html.parser")
-        # 查找指定元素
-        div_element = soup.find("div", class_="package-version-header")
-        version_text = div_element.b.text.strip()
-        number_text = div_element.b.next_sibling.strip()
-        version_text = version_text[8:]
-        number_text = number_text[1:-1]
-        return number_text
+        # # 查找指定元素
+        # div_element = soup.find("div", class_="package-version-header")
+        # version_text = div_element.b.text.strip()
+        # number_text = div_element.b.next_sibling.strip()
+        # version_text = version_text[8:]
+        # number_text = number_text[1:-1]
+        # return number_text
+        # 定位到所有版本信息所在的div元素
+
+        package_versions_div = soup.find('div', class_='package-versions')
+        # 寻找前四个版本的信息
+        versions_info_list = package_versions_div.find_all('li', class_='package-version', limit=4)
+        # 提取信息并打印
+        for version_info in versions_info_list:
+            version = []
+            
+            # 找到版本名称和版本编号
+            target_a_tags = version_info.find_all('a', attrs={'name': lambda value: value != 'suggested'})
+            # Iterate through the filtered <a> tags
+            for a_tag in target_a_tags:
+                if 'name' in a_tag.attrs:
+                    version.append(a_tag['name'])
+            version_name, version_code = version
+            
+            # 查找架构代码块 并 提取架构文本
+            native_code_tag = version_info.find('code', class_='package-nativecode')
+            arch = native_code_tag.text if native_code_tag else 'Native code not found'
+            if arch in self.architecture:   # FDroid 每个 APP 固定都有四个版本，x86_64, x86, arm64-v8a, armabi-v7a ，只有我们要的才记录下来供下载
+                print(f'Version Name: {version_name}, Version Code: {version_code}, Architecture: {arch}')
+                version = [version_name, version_code, arch]
+                versions.append(version)
+            else:
+                continue
+        self.versions = versions
+        return version_name
 
     def format_url(self, latest_version):
         # 构造下载链接
         download_urls = []
         
-        for n, architecture in self.offset_archs:
-            latest_version = str(int(latest_version) - n)
+        for version_name, version_code, arch in self.versions:
+            latest_version = version_code
             download_url = self.dl_url + '_' + latest_version + '.apk'
             download_urls.append(download_url)
             print(download_url)
@@ -129,8 +156,8 @@ class FDroidDownloader(AbstractDownloader):
 
     def format_filename(self, latest_version):
         """生成文件名，用以保存文件"""
-        filenames = [f'{self.name}-{architecture}-{latest_version}.apk'
-                          for _, architecture in self.offset_archs]
+        filenames = [f'{self.name}-{arch}-{version_name}.apk'
+                          for version_name, _, arch in self.versions]
         return filenames
 
 
