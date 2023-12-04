@@ -78,8 +78,10 @@ class AbstractDownloader(ABC):
             filenames = self.format_filename(latest_version[:])
             for download_url, filename in zip(valid_urls, filenames):
                 filepaths.append(self.downloading(download_url, filename))
-            # 更新记录的最新版本
-            self.version_data[self.item_name] = latest_version
+            # 更新记录的最新版本 ，实际上，如果前一步没有下载到实际文件，那么不应该更新。
+            if filepaths:
+                self.version_data[self.item_name] = latest_version
+                # 我们认为，前一步要做到：要么成功下载后传路径列表，要么没下载到实际文件传空列表。  保证这点，就可以用这个判断来正确更新当前版本
             return filepaths, latest_version
         else:
             print(f"Current version for {self.name} is up to date.")
