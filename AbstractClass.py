@@ -33,7 +33,7 @@ class AbstractDownloader(ABC):
         current_version = self.version_data.get(self.item_name)
 
         if current_version == latest_version:
-            print(f"version is same for {self.item_name}")
+            print(f"version {latest_version} is same for {self.item_name}")
             return False
         else:
             return True
@@ -77,7 +77,8 @@ class AbstractDownloader(ABC):
             valid_urls = self.check_url(urls)
             filenames = self.format_filename(latest_version[:])
             for download_url, filename in zip(valid_urls, filenames):
-                filepaths.append(self.downloading(download_url, filename))
+                if download_url:   # 空字符串的跳过
+                    filepaths.append(self.downloading(download_url, filename))
             # 更新记录的最新版本 ，实际上，如果前一步没有下载到实际文件，那么不应该更新。
             if filepaths:
                 self.version_data[self.item_name] = latest_version

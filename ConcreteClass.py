@@ -72,7 +72,7 @@ class GithubDownloader(AbstractDownloader):
         return download_urls
 
     def check_url(self, download_urls):
-        """检查下载直链是否有效"""
+        """检查下载直链是否有效，无效的用空字符串替代"""
         # 对于 GitHub，如果无效，会返回 404，有效则是 302
         valid_download_urls = []
         for download_url in download_urls:
@@ -82,6 +82,7 @@ class GithubDownloader(AbstractDownloader):
                 valid_download_urls.append(download_url)
                 print(f"Will Download according this url: '{download_url}'")
             else:
+                valid_download_urls.append('')   # 如果只是添加有效网址，在生成文件名那里，会不对应。因此，无效网址用空字符串替代
                 print(f"The Download url is invalid: '{download_url}' with status code {response.status_code}")
         return valid_download_urls
 
