@@ -5,38 +5,31 @@ import datetime
 
 from ConcreteClass import GithubDownloader, FDroidDownloader, MinioUploader
 from AutoCallerFactory import AutoCallerFactory
-import config
+import preprocess
 
 
-# 配置
+config = preprocess.config
+data = preprocess.data
+
 down_app = config.curl_path
-download_dir = config.temp_download_dir
-version_file = config.version_file_path
-version_deque_file = config.version_deque_file_path
-retained_version_file = config.retained_version_file_path
-minio_server = config.minio_server
-GithubAPI = config.GithubAPI
-
-with open(config.latest_version_link_filepath, 'r', encoding='utf-8') as f:
-    latest_links = json.load(f)
-
 up_app = config.minio_client_path
 minio_bucket_path = config.minio_host_alias + '/' + config.bucket
 
 # 实例化
 # github_downloader = GithubDownloader(down_app, download_dir, version_file)
 # fdroid_downloader = FDroidDownloader(down_app, download_dir, version_file)
-factory = AutoCallerFactory(down_app, download_dir, version_file, GithubAPI)
+factory = AutoCallerFactory(down_app, config.temp_download_dir, config.version_file_path, config.GithubAPI)
 factory.register_class("github", GithubDownloader)
 factory.register_class("fdroid", FDroidDownloader)
-minio_uploader = MinioUploader(up_app, minio_bucket_path, version_deque_file, retained_version_file, minio_server)
+minio_uploader = MinioUploader(up_app, minio_bucket_path, config.version_deque_file_path, config.retained_version_file_path, config.minio_server)
 
 # 使用
 def update():
     today = datetime.datetime.now()
     today_date = f"本次运行时间为 {today.year}-{today.month}-{today.day}"
+    items = data.reload(data.config.items_file_path)   # schedule 每次运行时，可以更新，如果有新添加的项目
     print(today_date)
-    for item_name, item in config.items.items():   # 这里每个 item 都是一个下载项目
+    for item_name, item in items.items():   # 这里每个 item 都是一个下载项目
         instance_name = item['website']
         try:
             filepaths, latest_version = factory.call_instance(instance_name, item_name, item)
@@ -50,7 +43,7 @@ def update():
             minio_uploader.import_config(filepaths, item_name, latest_version)
             minio_uploader.run()
             name_and_latest_link = minio_uploader.get_links_dict()
-            latest_links.update(name_and_latest_link)
+            data.latest_links.update(name_and_latest_link)
             # print(filepaths)
             # 删除本地文件
             for filepath in filepaths:
@@ -61,7 +54,7 @@ def update():
     minio_uploader.save_version_deque()
     # 保存反代用链接
     with open(config.latest_version_link_filepath, 'w', encoding='utf-8') as f:
-        json.dump(latest_links, f)
+        json.dump(data.latest_links, f)
 
 if __name__ == '__main__':
     update()
