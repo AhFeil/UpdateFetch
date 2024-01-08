@@ -1,4 +1,5 @@
 import json
+import re
 import requests
 from bs4 import BeautifulSoup
 import subprocess
@@ -68,6 +69,16 @@ class GithubDownloader(AbstractDownloader):
                                replace('${ARCHITECTURE}', arch).\
                                replace('${system}', sys).\
                                replace('${suffix_name}', suffix_name)
+            # 应对 文件名中的 tag 只是实际 tag 的一部分的情况，也就是处理 ~/${tag}/Bitwarden-Portable-${tag[9:18]} 这种，带切片的
+            tag = latest_version
+            def replace_tag(match):
+                tag_slice = match.group(1)
+                if tag_slice:
+                    start, end = map(int, tag_slice.split(':'))
+                    return tag[start:end]
+                else:
+                    return tag
+            download_url = re.sub(r'\$\{tag\[(\d+:\d+)\]\}', replace_tag, download_url)   # 如果有切片，前面替换会漏下来，由 re 替换
             download_urls.append(download_url)
         return download_urls
 
