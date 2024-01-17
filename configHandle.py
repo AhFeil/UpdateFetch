@@ -49,5 +49,11 @@ class Config(object):
         else:
             self.GithubAPI = None
 
+        self.web_domain = configs['web_domain']
+        self.web_Token = configs['web_Token']
+        self.category_default_title = configs.get('category_default_title', 'Uncategorized')
+        self.default_image = configs.get('default_image', '')
+        self.default_website = configs.get('default_website', '')
+
         # 进行加工
         self.minio_server = "http://" + configs['minio_server'] + "/"  # minio 的网址

@@ -5,6 +5,7 @@ import datetime
 
 from ConcreteClass import GithubDownloader, FDroidDownloader, MinioUploader
 from AutoCallerFactory import AutoCallerFactory
+from apiHandle import WebAPI, universal_data
 import preprocess
 
 
@@ -14,6 +15,7 @@ data = preprocess.data
 down_app = config.curl_path
 up_app = config.minio_client_path
 minio_bucket_path = config.minio_host_alias + '/' + config.bucket
+webapi = WebAPI(config.web_domain, config.web_Token)
 
 # 实例化
 # github_downloader = GithubDownloader(down_app, download_dir, version_file)
@@ -23,12 +25,14 @@ factory.register_class("github", GithubDownloader)
 factory.register_class("fdroid", FDroidDownloader)
 minio_uploader = MinioUploader(up_app, minio_bucket_path, config.version_deque_file_path, config.retained_version_file_path, config.minio_server)
 
+
 # 使用
 def update():
     today = datetime.datetime.now()
     today_date = f"本次运行时间为 {today.year}-{today.month}-{today.day}"
-    items = data.reload(data.config.items_file_path)   # schedule 每次运行时，可以更新，如果有新添加的项目
     print(today_date)
+    items = data.reload(data.config.items_file_path)   # schedule 每次运行时，可以更新，如果有新添加的项目
+    
     for item_name, item in items.items():   # 这里每个 item 都是一个下载项目
         instance_name = item['website']
         try:
@@ -48,6 +52,15 @@ def update():
             # 删除本地文件
             for filepath in filepaths:
                 os.remove(filepath)
+
+            # 将更新 应用到 Web
+            if config.is_production:
+                u_data = universal_data(config, item, name_and_latest_link)
+                if webapi.get_item_id_by_name(u_data['name']):   # 如果可以得到 id，则说明创建过了，使用 update
+                    webapi.update_item(u_data)
+                    webapi.update_link(u_data)
+                else:
+                    webapi.add_item_and_link(u_data)
         print("\n" + '-' * 33)
 
     factory.save_version()   # 不知原因，执行时，报错，找不到 open ，因此手动调用
