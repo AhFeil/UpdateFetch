@@ -3,16 +3,16 @@ import json
 
 # 我们应该能保证，除了类可能不存在，其他都会存在，因为是程序创建的
 
-def universal_data(config_instance, item_config, name_and_latest_link):
+def universal_data(config_instance, item_config, version, name_and_latest_link):
     """生成统一格式"""
+    latest_version = version
     download = []
     for link in name_and_latest_link[item_config["name"]]:
         path = link.rsplit("/", 1)[-1]
-        element = path.split("-")
+        element = path.split("-", maxsplit=3)
         # {self.name}-{formated_sys}-{formated_arch}-{latest_version}{suffix_name}
         system = element[1]
         arch = element[2]
-        latest_version = element[3]   # 重复取了 n 次，值都一样
         download.append({'platform': system, 'architecture': arch, 'link': link})
     
     category_title = item_config.get('category_title', config_instance.category_default_title)
@@ -43,6 +43,10 @@ class WebAPI():
         self.api_url4category = web_domain + 'api/categories/'
         self.api_url4item = web_domain + 'api/items/'
         self.api_url4download = web_domain + 'api/downloads/'
+
+    def item_exists(self, item_name):
+        """检查 item 是否存在，根据 name"""
+        return self.get_something_id_by_onekey(self.api_url4item, 'name', item_name)
 
     def get_something_id_by_onekey(self, api_url, onekey, onevalue):
         # 发送 GET 请求并传递查询参数

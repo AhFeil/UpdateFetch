@@ -181,7 +181,7 @@ class FDroidDownloader(AbstractDownloader):
         """生成文件名，用以保存文件"""
         
 
-        filenames = [f'{self.name}-{self.search_unified_arch[arch]}-{version_name}.apk'
+        filenames = [f'{self.name}-android-{self.search_unified_arch[arch]}-{version_name}.apk'
                           for version_name, _, arch in self.versions]
         return filenames
 

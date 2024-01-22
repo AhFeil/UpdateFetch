@@ -55,8 +55,8 @@ def update():
 
             # 将更新 应用到 Web
             if config.is_production:
-                u_data = universal_data(config, item, name_and_latest_link)
-                if webapi.get_item_id_by_name(u_data['name']):   # 如果可以得到 id，则说明创建过了，使用 update
+                u_data = universal_data(config, item, latest_version, name_and_latest_link)
+                if webapi.item_exists(u_data['name']):
                     webapi.update_item(u_data)
                     webapi.update_link(u_data)
                 else:
