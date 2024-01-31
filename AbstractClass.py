@@ -24,10 +24,6 @@ class AbstractDownloader(ABC):
         """交由不同网站以具体实现"""
         raise NotImplementedError
     
-    def get_latest_version_for_test(self):
-        """测试用"""
-        return self.latest_version_for_test
-
     def check_down_or_not(self, latest_version):
         """检查是否下载，比如检查最新版本是否还是之前已经下过的"""
         current_version = self.version_data.get(self.item_name)
@@ -67,10 +63,7 @@ class AbstractDownloader(ABC):
         """调用以上命令，串联工作流程"""
         name = self.name
         filepaths = []   # 保存下载后，文件的路径
-        if self.latest_version_for_test and self.latest_version_for_test != 'latest':
-            latest_version = self.get_latest_version_for_test()
-        else:
-            latest_version = self.get_latest_version()
+        latest_version = self.get_latest_version()
         
         if self.check_down_or_not(latest_version):
             urls = self.format_url(latest_version)

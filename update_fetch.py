@@ -3,7 +3,7 @@ import sys
 import json
 import datetime
 
-from ConcreteClass import GithubDownloader, FDroidDownloader, MinioUploader
+from ConcreteClass import GithubDownloader, FDroidDownloader, Only1LinkDownloader, MinioUploader
 from AutoCallerFactory import AutoCallerFactory
 from apiHandle import WebAPI, universal_data
 import preprocess
@@ -18,11 +18,10 @@ minio_bucket_path = config.minio_host_alias + '/' + config.bucket
 webapi = WebAPI(config.web_domain, config.web_Token)
 
 # 实例化
-# github_downloader = GithubDownloader(down_app, download_dir, version_file)
-# fdroid_downloader = FDroidDownloader(down_app, download_dir, version_file)
 factory = AutoCallerFactory(down_app, config.temp_download_dir, config.version_file_path, config.GithubAPI)
 factory.register_class("github", GithubDownloader)
 factory.register_class("fdroid", FDroidDownloader)
+factory.register_class("only1link", Only1LinkDownloader)
 minio_uploader = MinioUploader(up_app, minio_bucket_path, config.version_deque_file_path, config.retained_version_file_path, config.minio_server)
 
 

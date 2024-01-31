@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 import re
 import requests
@@ -10,20 +11,7 @@ from AbstractClass import AbstractDownloader, AbstractUploader
 
 class GithubDownloader(AbstractDownloader):
     """专门下载 GitHub 项目 release 中的内容"""
-    def __init__(self, app, download_dir):
-        super().__init__(app, download_dir)
-        self.item_name = ""
-        self.name = ""
-        self.website = ""
-        self.project_name = ""
-        self.sample_url = ""
-        self.system = []
-        self.architecture = []
-        self.system_archs = []
-        self.latest_version_for_test = ""
-
-    def import_config(self, item_name, item_config, version_data, GithubAPI=None, latest_version_for_test = ""):
-        # super().import_config(item_name, item_config)
+    def import_config(self, item_name, item_config, version_data, GithubAPI=None):
         self.item_name = item_name
         self.version_data = version_data
 
@@ -38,9 +26,6 @@ class GithubDownloader(AbstractDownloader):
         self.system_archs = [((formated_sys, formated_arch), (sys, arch), suffix_name) for 
                              formated_sys, (sys, suffix_name) in self.system.items() for 
                              formated_arch, arch in self.architecture.items()]
-        
-        # 这一项控制最新版，可以用于测试，通过修改此值，下载不同版本，但只能用于一个 item
-        self.latest_version_for_test = latest_version_for_test
 
     def get_latest_version(self):
         # 获取最新版本号
@@ -98,9 +83,49 @@ class GithubDownloader(AbstractDownloader):
         return valid_download_urls
 
 
+class Only1LinkDownloader(AbstractDownloader):
+    """专门下载只有一个下载链接的东西，比如 GitHub 项目 仓库里的 emby 客户端"""
+    def import_config(self, item_name, item_config, version_data):
+        self.item_name = item_name
+        self.version_data = version_data
+
+        self.name = item_config["name"]
+        self.multi = item_config["multi"]
+        # 对应多版本，把每个版本都放入列表 ((formated_sys, formated_arch), (sys, arch), suffix_name)
+        self.system_archs = [((one['system'], one['architecture']), (one['system'], one['architecture']), one['suffix']) for one in self.multi]
+
+    def get_latest_version(self):
+        # 以当前日期为版本号
+        now = datetime.now()
+        # 格式化日期
+        formatted_date = now.strftime("%Y-%m-%d")
+        latest_version = formatted_date
+        return latest_version
+
+    def format_url(self, latest_version):
+        # 构造下载链接
+        download_urls = [one['downlink'] for one in self.multi]
+        return download_urls
+
+    def check_url(self, download_urls):
+        """检查下载直链是否有效，无效的用空字符串替代"""
+        # 对于 GitHub，如果无效，会返回 404，有效则是 302
+        valid_download_urls = []
+        for download_url in download_urls:
+            response = requests.head(download_url)
+            # 通常情况下，302 状态码表示成功
+            if response.status_code == 302:
+                valid_download_urls.append(download_url)
+                print(f"Will Download according this url: '{download_url}'")
+            else:
+                valid_download_urls.append('')   # 如果只是添加有效网址，在生成文件名那里，会不对应。因此，无效网址用空字符串替代
+                print(f"The Download url is invalid: '{download_url}' with status code {response.status_code}")
+        return valid_download_urls
+
+
 class FDroidDownloader(AbstractDownloader):
     """专门下载 f-droid.org 的 apk"""
-    def import_config(self, item_name, item_config, version_data, latest_version_for_test = ""):
+    def import_config(self, item_name, item_config, version_data):
         # super().import_config(item_name, item_config)
         self.item_name = item_name
         self.version_data = version_data
@@ -109,11 +134,10 @@ class FDroidDownloader(AbstractDownloader):
         self.website = item_config["website"]
         self.project_name = item_config["project_name"]
         self.architecture = item_config["architecture"].values()
+        self.four1 = item_config.get('4in1')
         self.search_unified_arch = {value: key for key, value in item_config["architecture"].items()}   # 标准化的架构名
         self.url = f"https://f-droid.org/packages/{self.project_name}/"
         self.dl_url = f"https://f-droid.org/repo/{self.project_name}"
-        # 这一项控制最新版，可以用于测试，通过修改此值，下载不同版本，但只能用于一个 item
-        self.latest_version_for_test = latest_version_for_test
         self.versions = []   # 由于不同架构的下载地址关联一串不同的数字，所以用这个存放对应关系
 
     def get_latest_version(self):
@@ -125,18 +149,12 @@ class FDroidDownloader(AbstractDownloader):
         # with open("./fdroid.html", 'w', encoding='utf-8') as f:
         #     f.write(html_content)
         soup = BeautifulSoup(html_content, "html.parser")
-        # # 查找指定元素
-        # div_element = soup.find("div", class_="package-version-header")
-        # version_text = div_element.b.text.strip()
-        # number_text = div_element.b.next_sibling.strip()
-        # version_text = version_text[8:]
-        # number_text = number_text[1:-1]
-        # return number_text
-        # 定位到所有版本信息所在的div元素
 
         package_versions_div = soup.find('div', class_='package-versions')
+        
+        search_limit = 1 if self.four1 else 4   # 若是 4 合 1 的，只搜一个就行
         # 寻找前四个版本的信息
-        versions_info_list = package_versions_div.find_all('li', class_='package-version', limit=4)
+        versions_info_list = package_versions_div.find_all('li', class_='package-version', limit=search_limit)
         # 提取信息并打印
         for version_info in versions_info_list:
             version = []

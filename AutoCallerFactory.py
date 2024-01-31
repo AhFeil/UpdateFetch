@@ -23,6 +23,8 @@ class AutoCallerFactory:   # 先只给下载器用，以后有需要，搞继承
             instance = self.instances[name]
             if name == 'github':
                 instance.import_config(item_name, item, self.version_data, self.GithubAPI)
+            if name == 'only1link':
+                instance.import_config(item_name, item, self.version_data)
             else:
                 instance.import_config(item_name, item, self.version_data)   # 这里 version_data 一直是同一个，也就不用担心之前的分别实例化下载器的问题了
             filepaths, latest_version = instance.run()
@@ -45,17 +47,3 @@ class AutoCallerFactory:   # 先只给下载器用，以后有需要，搞继承
     # 这里要判断，应该在正确运行之后，才修改，如果中间出错，不修改
         # self.save_version()
         pass
-
-
-class Test4AutoCallerFactory(AutoCallerFactory):
-    def call_instance(self, name, item_name, item, latest_version_for_test):
-        if name in self.instances:
-            instance = self.instances[name]
-            if name == 'github':
-                instance.import_config(item_name, item, self.version_data, self.GithubAPI, latest_version_for_test)
-            else:
-                instance.import_config(item_name, item, self.version_data, latest_version_for_test)
-            filepaths, latest_version = instance.run()
-            return filepaths, latest_version
-        else:
-            raise ValueError(f"No instance found with name '{name}'.")
