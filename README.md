@@ -66,6 +66,7 @@ default_website: https://github.com/AhFeil/updatefetchWeb
 ```
 
 
+安装步骤在博客： **等待写文章**
 
 
 ## 使用

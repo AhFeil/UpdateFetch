@@ -6,11 +6,13 @@ import datetime
 from ConcreteClass import GithubDownloader, FDroidDownloader, Only1LinkDownloader, MinioUploader
 from AutoCallerFactory import AutoCallerFactory
 from apiHandle import WebAPI, universal_data
+from configHandle import setup_logger
 import preprocess
 
 
 config = preprocess.config
 data = preprocess.data
+logger = setup_logger(__name__)
 
 down_app = config.curl_path
 up_app = config.minio_client_path
@@ -29,7 +31,7 @@ minio_uploader = MinioUploader(up_app, minio_bucket_path, config.version_deque_f
 def update():
     today = datetime.datetime.now()
     today_date = f"本次运行时间为 {today.year}-{today.month}-{today.day}"
-    print(today_date)
+    logger.info(today_date)
     items = data.reload(data.config.items_file_path)   # schedule 每次运行时，可以更新，如果有新添加的项目
     
     for item_name, item in items.items():   # 这里每个 item 都是一个下载项目
@@ -37,7 +39,7 @@ def update():
         try:
             filepaths, latest_version = factory.call_instance(instance_name, item_name, item)
         except Exception('API_LIMIT'):
-            print("-----API rate limit exceeded for machine IP-----")
+            logger.warning("-----API rate limit exceeded for machine IP-----")
             filepaths = []
         
         if not filepaths:   # 无须更新
@@ -60,7 +62,7 @@ def update():
                     webapi.update_link(u_data)
                 else:
                     webapi.add_item_and_link(u_data)
-        print("\n" + '-' * 33)
+        logger.info("\n" + '-' * 33)
 
     factory.save_version()   # 不知原因，执行时，报错，找不到 open ，因此手动调用
     minio_uploader.save_version_deque()

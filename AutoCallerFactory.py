@@ -3,6 +3,10 @@
 """
 import json
 
+from configHandle import setup_logger
+logger = setup_logger(__name__)
+
+
 class AutoCallerFactory:   # 先只给下载器用，以后有需要，搞继承，另弄一个上传器用的
     def __init__(self, app, download_dir, version_file, GithubAPI):
         self.instances = {}
@@ -36,12 +40,12 @@ class AutoCallerFactory:   # 先只给下载器用，以后有需要，搞继承
         """保存内存中的版本信息到文件中"""
         if self.original_hash != hash(json.dumps(self.version_data, sort_keys=True)):
             # 执行需要的操作
-            print("当前已下载的最新版本信息已经改变，保存到文件中")
+            logger.info("当前已下载的最新版本信息已经改变，保存到文件中")
             with open(self.version_file, 'w', encoding='utf-8') as f:
                 json.dump(self.version_data, f, ensure_ascii=False)
-            print("Dispatcher of Downloader: Have saved latest version")
+            logger.info("Dispatcher of Downloader: Have saved latest version")
         else:
-            print("当前已下载的最新版本信息未发生改变")
+            logger.info("当前已下载的最新版本信息未发生改变")
 
     def __del__(self):
     # 这里要判断，应该在正确运行之后，才修改，如果中间出错，不修改

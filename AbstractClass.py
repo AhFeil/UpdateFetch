@@ -6,6 +6,9 @@ from abc import ABC, abstractmethod
 
 import ruamel.yaml
 
+from configHandle import setup_logger
+logger = setup_logger(__name__)
+
 
 class AbstractDownloader(ABC):
     """描述下载所有网站都需要的内容"""
@@ -29,7 +32,7 @@ class AbstractDownloader(ABC):
         current_version = self.version_data.get(self.item_name)
 
         if current_version == latest_version:
-            print(f"version {latest_version} is same for {self.item_name}")
+            logger.info(f"version {latest_version} is same for {self.item_name}")
             return False
         else:
             return True
@@ -78,7 +81,7 @@ class AbstractDownloader(ABC):
                 # 我们认为，前一步要做到：要么成功下载后传路径列表，要么没下载到实际文件传空列表。  保证这点，就可以用这个判断来正确更新当前版本
             return filepaths, latest_version
         else:
-            print(f"Current version for {self.name} is up to date.")
+            logger.info(f"Current version for {self.name} is up to date.")
             return filepaths, latest_version
 
 
@@ -142,7 +145,7 @@ class AbstractUploader(ABC):
             filename = os.path.basename(filepath)
             self.filenames.append(filename)
             self.uploading(filepath)
-            print(filename + " have upload to server")
+            logger.info(filename + " have upload to server")
         # 上传完，就把这个版本保存在对列里
         if self.version_deque.get(self.item_name):
             self.version_deque[self.item_name].appendleft(self.latest_version)
@@ -150,7 +153,7 @@ class AbstractUploader(ABC):
             temp_deque = deque()
             temp_deque.appendleft(self.latest_version)
             self.version_deque[self.item_name] = temp_deque
-        print(f"{self.item_name} new version {self.latest_version} added to version deque")
+        logger.info(f"{self.item_name} new version {self.latest_version} added to version deque")
         self.clear(self.oldVersionCount)   # 当前还没想好怎么指定特别项目保留的版本数量，先用默认的
 
 
@@ -159,7 +162,7 @@ class AbstractUploader(ABC):
         with open(self.version_deque_file, 'w', encoding='utf-8') as f:
             for_save_version_deque = {key: list(value) for key, value in self.version_deque.items()}
             json.dump(for_save_version_deque, f, ensure_ascii=False)
-        print("Uploader: Have saved version_deque ")
+        logger.info("Uploader: Have saved version_deque ")
 
     def __del__(self):
         # self.save_version_deque()

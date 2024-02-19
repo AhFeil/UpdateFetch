@@ -7,6 +7,8 @@ import subprocess
 from collections import deque
 
 from AbstractClass import AbstractDownloader, AbstractUploader
+from configHandle import setup_logger
+logger = setup_logger(__name__)
 
 
 class GithubDownloader(AbstractDownloader):
@@ -76,10 +78,10 @@ class GithubDownloader(AbstractDownloader):
             # 通常情况下，200 状态码表示成功
             if response.status_code == 302:
                 valid_download_urls.append(download_url)
-                print(f"Will Download according this url: '{download_url}'")
+                logger.info(f"Will Download according this url: '{download_url}'")
             else:
                 valid_download_urls.append('')   # 如果只是添加有效网址，在生成文件名那里，会不对应。因此，无效网址用空字符串替代
-                print(f"The Download url is invalid: '{download_url}' with status code {response.status_code}")
+                logger.warning(f"The Download url is invalid: '{download_url}' with status code {response.status_code}")
         return valid_download_urls
 
 
@@ -116,10 +118,10 @@ class Only1LinkDownloader(AbstractDownloader):
             # 通常情况下，302 状态码表示成功
             if response.status_code == 302:
                 valid_download_urls.append(download_url)
-                print(f"Will Download according this url: '{download_url}'")
+                logger.info(f"Will Download according this url: '{download_url}'")
             else:
                 valid_download_urls.append('')   # 如果只是添加有效网址，在生成文件名那里，会不对应。因此，无效网址用空字符串替代
-                print(f"The Download url is invalid: '{download_url}' with status code {response.status_code}")
+                logger.warning(f"The Download url is invalid: '{download_url}' with status code {response.status_code}")
         return valid_download_urls
 
 
@@ -171,7 +173,7 @@ class FDroidDownloader(AbstractDownloader):
             native_code_tag = version_info.find('code', class_='package-nativecode')
             arch = native_code_tag.text if native_code_tag else 'Native code not found'
             if arch in self.architecture:   # FDroid 每个 APP 固定都有四个版本，x86_64, x86, arm64-v8a, armabi-v7a ，只有我们要的才记录下来供下载
-                print(f'Version Name: {version_name}, Version Code: {version_code}, Architecture: {arch}')
+                logger.info(f'Version Name: {version_name}, Version Code: {version_code}, Architecture: {arch}')
                 version = [version_name, version_code, arch]
                 versions.append(version)
             else:
@@ -187,7 +189,7 @@ class FDroidDownloader(AbstractDownloader):
             latest_version = version_code
             download_url = self.dl_url + '_' + latest_version + '.apk'
             download_urls.append(download_url)
-            print(download_url)
+            logger.info(download_url)
         return download_urls
 
     def check_url(self, download_urls):
@@ -216,17 +218,17 @@ class MinioUploader(AbstractUploader):
         # 每种软件，一个文件夹
         subprocess.run([self.app, 'mb', "--ignore-existing", self.item_upload_path])
         subprocess.run([self.app, 'cp', filepath, self.item_upload_path])
-        print("Uploaded file:", filepath)
+        logger.info(f"Uploaded file: {filepath}")
 
     def clear(self, oldVersionCount):
 
         if len(self.version_deque[self.item_name]) > oldVersionCount+1:
             old_version = self.version_deque[self.item_name].pop()
             if old_version in self.retained_version.get(self.item_name, []):
-                print(f"{self.item_name} has a retained version: {old_version}, so it will not be removed")
+                logger.info(f"{self.item_name} has a retained version: {old_version}, so it will not be removed")
                 return
             if old_version == self.latest_version:
-                print("old_version == latest_version")
+                logger.info("old_version == latest_version")
                 return
             result = subprocess.run([self.app, 'find', self.item_upload_path, "--name", f"*{old_version}.*"], capture_output=True, text=True)
             old_filenames = result.stdout
@@ -234,7 +236,7 @@ class MinioUploader(AbstractUploader):
             # 删除旧文件
             for filename in filenames:
                 subprocess.run([self.app, 'rm', filename])
-            print(f"{self.item_name} delete old version {old_version}")
+            logger.info(f"{self.item_name} delete old version {old_version}")
 
 
     def get_uploaded_files_link(self):

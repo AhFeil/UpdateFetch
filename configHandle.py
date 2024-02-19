@@ -1,6 +1,8 @@
 import sys
 import os
+import logging
 import json
+
 import ruamel.yaml
 
 
@@ -57,3 +59,22 @@ class Config(object):
 
         # 进行加工
         self.minio_server = "http://" + configs['minio_server'] + "/"  # minio 的网址
+
+
+def setup_logger(name):
+    # 创建 logger
+    logger = logging.getLogger(name)
+
+    # 检查是否已经有 handler 配置，如果没有，则添加一个新的 handler
+    if not logger.handlers:
+        # 设置日志格式
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%H:%M:%S')
+        # 创建 console handler 并设置级别为 info
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(formatter)
+        # 添加 handler 到 logger
+        logger.addHandler(console_handler)
+
+    # 设置日志级别
+    logger.setLevel(logging.INFO)
+    return logger

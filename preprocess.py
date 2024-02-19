@@ -1,5 +1,4 @@
 # 添加命令行参数解析，调用 configHandle，配置日志格式，调用 dataHandle，实例一些全局类
-import logging
 import argparse
 
 from configHandle import Config
@@ -16,12 +15,6 @@ configfile = args.config
 
 # 定义所有变量
 config = Config(configfile)
-
-
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
-)
 
 
 # 如果前面没出错，可以加载持久化的数据
