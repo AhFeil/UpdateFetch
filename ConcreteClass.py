@@ -39,7 +39,7 @@ class GithubDownloader(AbstractDownloader):
         response = requests.get(url, headers=headers)
         data = json.loads(response.text)
         if data.get('message'):
-            raise Exception('API_LIMIT')   # 测试时候，触发 API rate limit exceeded for machine IP 了
+            raise Exception('API_LIMIT')   # API rate limit exceeded for machine IP
         latest_version = data["tag_name"]
         latest_version = latest_version.replace('/', r'%2F')
         return latest_version
@@ -75,12 +75,12 @@ class GithubDownloader(AbstractDownloader):
         valid_download_urls = []
         for download_url in download_urls:
             response = requests.head(download_url)
-            # 通常情况下，200 状态码表示成功
             if response.status_code == 302:
                 valid_download_urls.append(download_url)
                 logger.info(f"Will Download according this url: '{download_url}'")
             else:
-                valid_download_urls.append('')   # 如果只是添加有效网址，在生成文件名那里，会不对应。因此，无效网址用空字符串替代
+                # 如果只是添加有效网址，在生成文件名那里，会不对应。因此，无效网址用空字符串替代
+                valid_download_urls.append('')
                 logger.warning(f"The Download url is invalid: '{download_url}' with status code {response.status_code}")
         return valid_download_urls
 
@@ -111,16 +111,14 @@ class Only1LinkDownloader(AbstractDownloader):
 
     def check_url(self, download_urls):
         """检查下载直链是否有效，无效的用空字符串替代"""
-        # 对于 GitHub，如果无效，会返回 404，有效则是 302
         valid_download_urls = []
         for download_url in download_urls:
             response = requests.head(download_url)
-            # 通常情况下，302 状态码表示成功
             if response.status_code == 302:
                 valid_download_urls.append(download_url)
                 logger.info(f"Will Download according this url: '{download_url}'")
             else:
-                valid_download_urls.append('')   # 如果只是添加有效网址，在生成文件名那里，会不对应。因此，无效网址用空字符串替代
+                valid_download_urls.append('')
                 logger.warning(f"The Download url is invalid: '{download_url}' with status code {response.status_code}")
         return valid_download_urls
 
@@ -128,7 +126,6 @@ class Only1LinkDownloader(AbstractDownloader):
 class FDroidDownloader(AbstractDownloader):
     """专门下载 f-droid.org 的 apk"""
     def import_config(self, item_name, item_config, version_data):
-        # super().import_config(item_name, item_config)
         self.item_name = item_name
         self.version_data = version_data
 
@@ -148,8 +145,6 @@ class FDroidDownloader(AbstractDownloader):
         # 发送 HTTP 请求并获取 HTML 内容
         response = requests.get(self.url)
         html_content = response.text
-        # with open("./fdroid.html", 'w', encoding='utf-8') as f:
-        #     f.write(html_content)
         soup = BeautifulSoup(html_content, "html.parser")
 
         package_versions_div = soup.find('div', class_='package-versions')
@@ -184,7 +179,6 @@ class FDroidDownloader(AbstractDownloader):
     def format_url(self, latest_version):
         # 构造下载链接
         download_urls = []
-        
         for version_name, version_code, arch in self.versions:
             latest_version = version_code
             download_url = self.dl_url + '_' + latest_version + '.apk'
@@ -199,8 +193,6 @@ class FDroidDownloader(AbstractDownloader):
     
     def format_filename(self, latest_version):
         """生成文件名，用以保存文件"""
-        
-
         filenames = [f'{self.name}-android-{self.search_unified_arch[arch]}-{version_name}.apk'
                           for version_name, _, arch in self.versions]
         return filenames
@@ -221,7 +213,6 @@ class MinioUploader(AbstractUploader):
         logger.info(f"Uploaded file: {filepath}")
 
     def clear(self, oldVersionCount):
-
         if len(self.version_deque[self.item_name]) > oldVersionCount+1:
             old_version = self.version_deque[self.item_name].pop()
             if old_version in self.retained_version.get(self.item_name, []):

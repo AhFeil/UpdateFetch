@@ -4,7 +4,7 @@ import json
 from configHandle import setup_logger
 logger = setup_logger(__name__)
 
-# 我们应该能保证，除了类可能不存在，其他都会存在，因为是程序创建的
+# 我们应该能保证 updatefetchWeb，除了种类 category_title 可能不存在，其他都会存在，因为是程序创建的
 
 def universal_data(config_instance, item_config, version, name_and_latest_link):
     """生成统一格式"""
@@ -13,7 +13,7 @@ def universal_data(config_instance, item_config, version, name_and_latest_link):
     for link in name_and_latest_link[item_config["name"]]:
         path = link.rsplit("/", 1)[-1]
         element = path.split("-", maxsplit=3)
-        # {self.name}-{formated_sys}-{formated_arch}-{latest_version}{suffix_name}
+        # 名称格式为：{self.name}-{formated_sys}-{formated_arch}-{latest_version}{suffix_name}
         system = element[1]
         arch = element[2]
         download.append({'platform': system, 'architecture': arch, 'link': link})
@@ -104,9 +104,9 @@ class WebAPI():
             raise Exception(f"Category '{item['category_title']}' not found")
         # 发起POST请求以创建新的分类
         response = requests.post(self.api_url4item, data=json.dumps(new_item), headers={'Content-Type': 'application/json', 'Authorization': self.web_Token})
-        # 检查响应
-        logger.info(response.status_code)  # 应该返回201表示创建成功
-        logger.info(response.json())  # 返回新建 item 的信息
+        # 返回201表示创建成功，返回新建 item 的信息
+        logger.info(response.status_code)
+        logger.info(response.json())
 
         
         item_id = self.get_something_id_by_onekey(self.api_url4item, 'name', item['name'])
@@ -114,8 +114,8 @@ class WebAPI():
             for dl in item['download']:
                 dl['item'] = item_id
                 response = requests.post(self.api_url4download, data=json.dumps(dl), headers={'Content-Type': 'application/json', 'Authorization': self.web_Token})
-                logger.info(response.status_code)  # 应该返回201表示创建成功
-                logger.info(response.json())  # 返回新建 link 的信息
+                logger.info(response.status_code)
+                logger.info(response.json())
         else:
             raise Exception(f"Category '{item['name']}' not found")
 
@@ -132,8 +132,9 @@ class WebAPI():
                 dl['item'] = item_id
                 update_url = f"{self.api_url4download}{dl_id}/"
                 response = requests.put(update_url, data=json.dumps(dl), headers={'Content-Type': 'application/json', 'Authorization': self.web_Token})
-                logger.info(response.status_code)  # 应该返回201表示创建成功
-                logger.info(response.json())  # 返回新建 link 的信息
+                # 返回201表示创建成功，返回新建 link 的信息
+                logger.info(response.status_code)
+                logger.info(response.json())
             else:
                 raise Exception(f"dl not found")
 
@@ -152,9 +153,10 @@ class WebAPI():
             update_url = f"{self.api_url4item}{item_id}/"
             # 发起POST请求以创建新的分类
             response = requests.put(update_url, data=json.dumps(new_item), headers={'Content-Type': 'application/json', 'Authorization': self.web_Token})
-            # 检查响应
-            logger.info(response.status_code)  # 应该返回201表示创建成功
-            logger.info(response.json())  # 返回新建 item 的信息
+            # 返回201表示创建成功
+            logger.info(response.status_code)
+            # 返回新建 item 的信息
+            logger.info(response.json())
         else:
             raise Exception(f"Category '{item['category_title']}' not found")
 
@@ -168,6 +170,6 @@ class WebAPI():
         delete_url = f'http://your_domain/api/categories/{category_id_to_delete}/'
         response = requests.delete(delete_url)
 
-        # 检查响应
-        logger.info(response.status_code)  # 应该返回204表示删除成功
+        # 返回204表示删除成功
+        logger.info(response.status_code)
 

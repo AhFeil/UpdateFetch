@@ -4,6 +4,9 @@ from collections import deque
 
 import ruamel.yaml
 
+from configHandle import setup_logger
+logger = setup_logger(__name__)
+
 
 class Data(object):
     def __init__(self, config) -> None:
@@ -18,6 +21,32 @@ class Data(object):
     def _load_file(self) -> None:
         """如果是内容不会由外部改变的数据文件，可以预先加载，会手动修改内容的，在后面程序中实时 reload"""
         self.latest_links = self.reload(self.config.latest_version_link_filepath)
+        self.version_data = self.reload(self.config.version_file_path)
+        self.retained_version = self.reload(self.config.retained_version_file_path)
+        version_list = self.reload(self.config.version_deque_file_path)
+        self.version_deque = {key: deque(value) for key, value in version_list.items()}
+
+        # 获取 version_data 原始数据结构的哈希值，用于判断本次是否有更新
+        self.original_hash = hash(json.dumps(self.version_data, sort_keys=True))
+
+    def save_version_deque_and(self):
+        """保存内存中的版本信息到文件中"""
+        if self.original_hash != hash(json.dumps(self.version_data, sort_keys=True)):
+            # 有更新
+            logger.info("当前已下载的最新版本信息已经改变，保存到文件中")
+            with open(self.config.version_file_path, 'w', encoding='utf-8') as f:
+                json.dump(self.version_data, f, ensure_ascii=False)
+            logger.info("DataHandle: Have saved latest version")
+
+            with open(self.config.version_deque_file_path, 'w', encoding='utf-8') as f:
+                for_save_version_deque = {key: list(value) for key, value in self.version_deque.items()}
+                json.dump(for_save_version_deque, f, ensure_ascii=False)
+            logger.info("DataHandle: Have saved version_deque ")
+            # 保存最新版下载链接
+            with open(config.latest_version_link_filepath, 'w', encoding='utf-8') as f:
+                json.dump(self.latest_links, f)
+        else:
+            logger.info("当前已下载的最新版本信息未发生改变")
 
     def _make_sure_file_exist(self) -> None:
         """有些数据文件，要确保存在，填充符合规范的样例内容，后面程序才能无须再判断"""

@@ -87,7 +87,7 @@ default_website: https://github.com/AhFeil/updatefetchWeb
 
 ```yaml
 # 以 xray 为例
-xray_binary:   # 下载项的名称，在上传时，会创建同名目录
+xray_binary:   # 下载项的名称，在上传时，会创建同名目录；以及在下载器会用到
   name: xray   # 软件名，用于重命名下载后的文件，推荐全小写，不能带有 - 
   category_title: Server
   image: https://ib.ahfei.blog/imagesbed/xray_logo_cpd-24-01-03.webp
