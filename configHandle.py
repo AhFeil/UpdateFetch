@@ -51,7 +51,7 @@ class Config(object):
         else:
             self.GithubAPI = None
 
-        self.web_domain = configs.get('web_domain')
+        self.web_domain = configs.get('web_domain', '')
         self.web_Token = configs.get('web_Token')
         self.category_default_title = configs.get('category_default_title', 'Uncategorized')
         self.default_image = configs.get('default_image', '')

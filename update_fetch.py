@@ -56,7 +56,7 @@ def update():
                 os.remove(filepath)
 
             # 将更新 应用到 Web
-            if config.is_production and config.web_domain is not None:
+            if config.is_production and config.web_domain:
                 u_data = universal_data(config, item, latest_version, name_and_latest_link)
                 if webapi.item_exists(u_data['name']):
                     webapi.update_item(u_data)
