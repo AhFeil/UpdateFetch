@@ -56,11 +56,11 @@ bucket: updatefetch     # mc 上传时，要放到哪个 bucket
 X-GitHub-Api-Version: "2022-11-28"
 Authorization: "Bearer github_pat_11xxxxxxkBbu0_mfgypv21NLBCxxxxxxxxxxxxxxxxxxxxxxxxxxxxxbQTWJA1"
 
-# 与 UpdateFetchWeb 相关的
+# 与 UpdateFetchWeb 相关的，若删除则不进行与 web 的交互，不影响本程序自身功能
 web_domain: http://185.149.146.103:7699/   # 最后必须带 /
 web_Token: Token b8xxxxxxxxxxxxxxxxxxxxxxxxx40f142
 category_default_title: Uncategorized   # 这个必须填
-## 下面不填的话，删除即可
+## 下面是默认图片和项目主页，可删除
 default_image: https://ib.ahfei.blog:443/imagesbed/undefined_image_url_200-24-01-05.webp
 default_website: https://github.com/AhFeil/updatefetchWeb
 ```
