@@ -6,7 +6,7 @@ from configHandle import Config
 # 创建一个解析器
 parser = argparse.ArgumentParser(description="Your script description")
 # 添加你想要接收的命令行参数
-parser.add_argument('--config', required=False, default='./config.yaml', help='Config File Path', )
+parser.add_argument('--config', required=False, default='./config_and_data_files/config.yaml', help='Config File Path', )
 # 解析命令行参数
 args = parser.parse_args()
 

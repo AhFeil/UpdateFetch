@@ -43,7 +43,7 @@ class Data(object):
                 json.dump(for_save_version_deque, f, ensure_ascii=False)
             logger.info("DataHandle: Have saved version_deque ")
             # 保存最新版下载链接
-            with open(config.latest_version_link_filepath, 'w', encoding='utf-8') as f:
+            with open(self.config.latest_version_link_filepath, 'w', encoding='utf-8') as f:
                 json.dump(self.latest_links, f)
         else:
             logger.info("当前已下载的最新版本信息未发生改变")

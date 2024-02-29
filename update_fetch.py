@@ -65,8 +65,6 @@ def update():
                     webapi.add_item_and_link(u_data)
         logger.info("\n" + '-' * 33)
 
-        break
-
     data.save_version_deque_and()
 
 if __name__ == '__main__':

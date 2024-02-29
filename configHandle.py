@@ -14,7 +14,7 @@ class Config(object):
         
         # 用户可以不管，开发者可以改的
         self.temp_download_dir = './temp_download' # 软件临时下载到这里，等上传之后，再删除
-        self.data_dir = './data'                   # 保存记录文件的目录
+        self.data_dir = './config_and_data_files'  # 保存记录文件的目录
         # 一般无须改动的变量
         self.version_file = 'version.json'   # 当前软件已下载的最新版本。将来把这个去掉，与下面的合一
         self.version_deque_file = 'version_deque.json'   # 用于上传后，清除旧版本的，对于上传器而言的，下载器不会修改这个文件

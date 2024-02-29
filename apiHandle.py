@@ -127,7 +127,7 @@ class WebAPI():
         response_json = response.json()
 
         for dl in item['download']:
-            dl_id = self.get_download_id_by_multitude(item_id, dl, response_json)   # 急需优化
+            dl_id = self.get_download_id_by_multitude(item_id, dl, response_json)
             if dl_id:
                 dl['item'] = item_id
                 update_url = f"{self.api_url4download}{dl_id}/"

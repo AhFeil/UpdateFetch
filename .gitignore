@@ -1,7 +1,6 @@
 # self
-data/
+config_and_data_files/
 temp_download/
-config.yaml
 test_downloader.py
 test_api.py
 
