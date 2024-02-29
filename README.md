@@ -1,8 +1,8 @@
 # UpdateFetch
 
-根据下载项配置文件，定期检查和下载软件的最新版，方便在特殊网络环境中下载软件，配合 UpdateFetchWeb 更方便使用。
+它能根据用户的设定，每日检查 GitHub、F-Droid 等平台的软件，若有更新则下载，并提供链接，方便在特殊网络环境中分享、下载软件，配合 UpdateFetchWeb 更方便使用。
 
-创建这个项目的需求动力是在“长城防火墙”下，国内机子想装个 serverstatus 探针都要梯子，虽然可以手动上传，但是不方便写脚本。后来又发现这个项目还方便给其他人分享 GitHub 上的好用 APP 等，他们也方便自行更新软件，于是又写了 UpdateFetchWeb 作为前端。
+创建这个项目的需求动力是在“长城防火墙”下，国内机子想装个 serverstatus 探针都要梯子，虽然可以手动上传，但是不方便写脚本。后来又发现这个项目还方便给其他人分享 GitHub 上的好用 APP 等，他们也方便自行更新软件，于是又写了 UpdateFetchWeb 作为前端。可以前往演示网页体验： [UpdateFetch Web](http://185.149.146.103:7699/)
 
 
 ## 功能
@@ -56,7 +56,7 @@ bucket: updatefetch     # mc 上传时，要放到哪个 bucket
 X-GitHub-Api-Version: "2022-11-28"
 Authorization: "Bearer github_pat_11xxxxxxkBbu0_mfgypv21NLBCxxxxxxxxxxxxxxxxxxxxxxxxxxxxxbQTWJA1"
 
-# 与 UpdateFetchWeb 相关的，若删除则不进行与 web 的交互，不影响本程序自身功能
+# 与 UpdateFetchWeb 相关的，若还未安装 UpdateFetchWeb，删除下面所有的，不影响本程序自身功能
 web_domain: http://185.149.146.103:7699/   # 最后必须带 /
 web_Token: Token b8xxxxxxxxxxxxxxxxxxxxxxxxx40f142
 category_default_title: Uncategorized   # 这个必须填
@@ -66,7 +66,7 @@ default_website: https://github.com/AhFeil/updatefetchWeb
 ```
 
 
-安装步骤在博客： **等待写文章**
+安装步骤在博客： [定期检查和下载软件的最新版 UpdateFetch 的安装步骤 - 技焉洲 (vfly2.com)](https://technique.vfly2.com/2024/02/deployment-process-of-updatefetch/)
 
 
 ## 使用
@@ -77,7 +77,7 @@ default_website: https://github.com/AhFeil/updatefetchWeb
 ### 下载项配置文件
 
 
-为了方便管理，本项目会重命名下载后的文件，格式为： **软件名-系统-架构-版本.后缀名**，每个部分用 `-` 连接，因此软件名不能带有 - ，会导致程序出错。
+为了方便管理，本项目会重命名下载后的文件，格式为： **软件名-系统-架构-版本.后缀名**，每个部分用 `-` 连接，因此软件名不能带有 `-` ，会导致程序出错。
 
 
 *GitHub 网站 release 下载*
@@ -127,7 +127,7 @@ SchildChat:
   name: schildchat
   website: fdroid
   project_name: de.spiritcroc.riotx   # 这个到软件在 FDroid 网站的页面，其网址最后一部分就是
-  # 因为 FDroid 上都是安卓平台的 APP，因此不必填写系统，在代码里写死了 Android 系统
+  # 因为 FDroid 上都是 Android 平台的 APP，因此不必填写系统
   architecture:
     arm64: arm64-v8a
 ```
@@ -181,5 +181,14 @@ MinIO 的下载链接格式是
 ```
 http://ip:9000/bucket_name/file.name
 ```
+
+
+
+
+## UpdateFetchWeb
+
+为了便于使用，可以将下载项在网页上展示出来。项目主页在： https://github.com/AhFeil/UpdateFetchWeb
+
+UpdateFetch 通过调用 Web 程序的 API ，将每一次运行时，更新的信息传递给 Web 程序。
 
 
