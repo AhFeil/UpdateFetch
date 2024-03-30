@@ -22,6 +22,7 @@ class Data(object):
         """如果是内容不会由外部改变的数据文件，可以预先加载，会手动修改内容的，在后面程序中实时 reload"""
         self.latest_links = self.reload(self.config.latest_version_link_filepath)
         self.version_data = self.reload(self.config.version_file_path)
+        # 这里应该想办法保证 retained_version 不可改变
         self.retained_version = self.reload(self.config.retained_version_file_path)
         version_list = self.reload(self.config.version_deque_file_path)
         self.version_deque = {key: deque(value) for key, value in version_list.items()}

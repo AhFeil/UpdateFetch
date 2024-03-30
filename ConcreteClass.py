@@ -1,19 +1,20 @@
 from datetime import datetime
 import json
 import re
-import requests
+import httpx
 from bs4 import BeautifulSoup
 import subprocess
 from collections import deque
+import asyncio
 
 from AbstractClass import AbstractDownloader, AbstractUploader
-from configHandle import setup_logger
+from configHandle import setup_logger, APILimitException
 logger = setup_logger(__name__)
 
 
 class GithubDownloader(AbstractDownloader):
     """专门下载 GitHub 项目 release 中的内容"""
-    def import_config(self, item_name, item_config, version_data, GithubAPI=None):
+    def import_item(self, item_name, item_config, version_data, GithubAPI=None):
         self.item_name = item_name
         self.version_data = version_data
 
@@ -29,17 +30,19 @@ class GithubDownloader(AbstractDownloader):
                              formated_sys, (sys, suffix_name) in self.system.items() for 
                              formated_arch, arch in self.architecture.items()]
 
-    def get_latest_version(self):
+    async def get_latest_version(self):
         # 获取最新版本号
         url = f"https://api.github.com/repos/{self.project_name}/releases/latest"
         headers = {}
         if self.GithubAPI:
             headers = {"Authorization": self.GithubAPI['Authorization'],
                        "X-GitHub-Api-Version": self.GithubAPI['X_GitHub_Api_Version']}
-        response = requests.get(url, headers=headers)
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url, headers=headers)
         data = json.loads(response.text)
+        # API rate limit exceeded for machine IP
         if data.get('message'):
-            raise Exception('API_LIMIT')   # API rate limit exceeded for machine IP
+            raise APILimitException("API_LIMIT")
         latest_version = data["tag_name"]
         latest_version = latest_version.replace('/', r'%2F')
         return latest_version
@@ -69,25 +72,16 @@ class GithubDownloader(AbstractDownloader):
             download_urls.append(download_url)
         return download_urls
 
-    def check_url(self, download_urls):
+    async def get_valid_urls(self, download_urls):
         """检查下载直链是否有效，无效的用空字符串替代"""
         # 对于 GitHub，如果无效，会返回 404，有效则是 302
-        valid_download_urls = []
-        for download_url in download_urls:
-            response = requests.head(download_url)
-            if response.status_code == 302:
-                valid_download_urls.append(download_url)
-                logger.info(f"Will Download according this url: '{download_url}'")
-            else:
-                # 如果只是添加有效网址，在生成文件名那里，会不对应。因此，无效网址用空字符串替代
-                valid_download_urls.append('')
-                logger.warning(f"The Download url is invalid: '{download_url}' with status code {response.status_code}")
-        return valid_download_urls
+        valid_codes = [302]
+        return await asyncio.gather(*(self.get_valid_url(url, valid_codes) for url in download_urls))
 
 
 class Only1LinkDownloader(AbstractDownloader):
     """专门下载只有一个下载链接的东西，比如 GitHub 项目 仓库里的 emby 客户端"""
-    def import_config(self, item_name, item_config, version_data):
+    def import_item(self, item_name, item_config, version_data):
         self.item_name = item_name
         self.version_data = version_data
 
@@ -96,7 +90,7 @@ class Only1LinkDownloader(AbstractDownloader):
         # 对应多版本，把每个版本都放入列表 ((formated_sys, formated_arch), (sys, arch), suffix_name)
         self.system_archs = [((one['system'], one['architecture']), (one['system'], one['architecture']), one['suffix']) for one in self.multi]
 
-    def get_latest_version(self):
+    async def get_latest_version(self):
         # 以当前日期为版本号
         now = datetime.now()
         # 格式化日期
@@ -109,23 +103,16 @@ class Only1LinkDownloader(AbstractDownloader):
         download_urls = [one['downlink'] for one in self.multi]
         return download_urls
 
-    def check_url(self, download_urls):
+    async def get_valid_urls(self, download_urls):
         """检查下载直链是否有效，无效的用空字符串替代"""
-        valid_download_urls = []
-        for download_url in download_urls:
-            response = requests.head(download_url)
-            if response.status_code == 302:
-                valid_download_urls.append(download_url)
-                logger.info(f"Will Download according this url: '{download_url}'")
-            else:
-                valid_download_urls.append('')
-                logger.warning(f"The Download url is invalid: '{download_url}' with status code {response.status_code}")
-        return valid_download_urls
+        # 对于 GitHub，如果无效，会返回 404，有效则是 302
+        valid_codes = [302]
+        return await asyncio.gather(*(self.get_valid_url(url, valid_codes) for url in download_urls))
 
 
 class FDroidDownloader(AbstractDownloader):
     """专门下载 f-droid.org 的 apk"""
-    def import_config(self, item_name, item_config, version_data):
+    def import_item(self, item_name, item_config, version_data):
         self.item_name = item_name
         self.version_data = version_data
 
@@ -139,11 +126,12 @@ class FDroidDownloader(AbstractDownloader):
         self.dl_url = f"https://f-droid.org/repo/{self.project_name}"
         self.versions = []   # 由于不同架构的下载地址关联一串不同的数字，所以用这个存放对应关系
 
-    def get_latest_version(self):
+    async def get_latest_version(self):
         # 获取最新版本号
         versions = []
         # 发送 HTTP 请求并获取 HTML 内容
-        response = requests.get(self.url)
+        async with httpx.AsyncClient() as client:
+            response = await client.get(self.url)
         html_content = response.text
         soup = BeautifulSoup(html_content, "html.parser")
 
@@ -186,10 +174,11 @@ class FDroidDownloader(AbstractDownloader):
             logger.info(download_url)
         return download_urls
 
-    def check_url(self, download_urls):
+    async def get_valid_urls(self, download_urls):
         """检查下载直链是否有效"""
-        # 对于 FDroid，暂时没检查
-        return download_urls
+        # 对于 FDroid，有效则是 200
+        valid_codes = [200]
+        return await asyncio.gather(*(self.get_valid_url(url, valid_codes) for url in download_urls))
     
     def format_filename(self, latest_version):
         """生成文件名，用以保存文件"""

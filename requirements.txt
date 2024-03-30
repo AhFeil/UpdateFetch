@@ -1,4 +1,5 @@
-requests
+httpx
+aiofiles
 ruamel.yaml
 beautifulsoup4
 schedule

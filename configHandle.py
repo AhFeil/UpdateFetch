@@ -6,6 +6,10 @@ import json
 import ruamel.yaml
 
 
+class APILimitException(Exception):
+    """为 GitHub 请求 API 限制准备的"""
+    pass
+
 class Config(object):
     def __init__(self, configs_path='./configs.yaml') -> None:
         self.yaml = ruamel.yaml.YAML()
@@ -42,7 +46,7 @@ class Config(object):
         """将配置文件里的参数，赋予单独的变量，方便后面程序调用"""
         configs = self._load_config()
         self.is_production = configs['is_production']
-        self.curl_path = configs['curl_path']
+        self.concurrent_amount = configs['concurrent_amount']
         self.minio_client_path = configs['minio_client_path']
         self.minio_host_alias = configs['minio_host_alias']
         self.bucket = configs['bucket']
@@ -59,6 +63,7 @@ class Config(object):
 
         # 进行加工
         self.minio_server = "http://" + configs['minio_server'] + "/"  # minio 的网址
+        self.minio_bucket_path = self.minio_host_alias + '/' + self.bucket
 
 
 def setup_logger(name):

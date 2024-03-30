@@ -1,8 +1,8 @@
 # UpdateFetch
 
-它能根据用户的设定，每日检查 GitHub、F-Droid 等平台的软件，若有更新则下载，并提供链接，方便在特殊网络环境中分享、下载软件，配合 UpdateFetchWeb 更方便使用。
+UpdateFetch 能根据用户的设定，每日检查 GitHub、F-Droid 等平台的软件，若有更新则下载，并提供链接，方便在特殊网络环境中分享、下载软件，配合 UpdateFetchWeb 更方便使用。
 
-创建这个项目的需求动力是在“长城防火墙”下，国内机子想装个 serverstatus 探针都要梯子，虽然可以手动上传，但是不方便写脚本。后来又发现这个项目还方便给其他人分享 GitHub 上的好用 APP 等，他们也方便自行更新软件，于是又写了 UpdateFetchWeb 作为前端。可以前往演示网页体验： [UpdateFetch Web](http://185.149.146.103:7699/)
+创建这个项目的需求动力是在“长城防火墙”下，国内机子想装个 serverstatus 探针都要梯子，虽然可以手动上传，但是不方便写脚本。后来又发现这个项目还方便给其他人分享 GitHub 上的好用 APP 等，他们也方便自行更新软件，于是又写了 UpdateFetchWeb 作为前端。可以前往演示网页体验： [UpdateFetch Web (vfly2.com)](http://updatefetch.vfly2.com/)
 
 
 ## 功能
@@ -18,25 +18,28 @@
 
 
 程序结构：
-1. preprocess.py, configHandle.py, dataHandle.py。加载配置和数据的，对应配置文件是 config.yaml，对应的数据目录是 data
-2. update_fetch.py，主程序；run_as_scheduled.py，在主程序基础上加上定期运行
-3. AutoCallerFactory.py。调度下载器的，
-4. AbstractClass.py, ConcreteClass.py 类，下载器和上传器。ConcreteClass 中，为不同网站编写不同的下载器，上传器只有 MinIO 一种
-5. apiHandle.py。上传数据到 UpdateFetchWeb
+1. 加载配置和数据： preprocess.py, configHandle.py, dataHandle.py，数据和配置都在 config_and_data_files 下
+2. 主程序： update_fetch.py；定期运行主程序：run_as_scheduled.py
+3. 调度下载器： AutoCallerFactory.py
+4. 下载器和上传器的类： AbstractClass.py, ConcreteClass.py。ConcreteClass 中，为不同网站编写不同的下载器，上传器只有 MinIO 一种
+5. 与 UpdateFetchWeb 通信： apiHandle.py
 
 
-data 目录:
-1. items.yaml，下载项配置文件
-2. retained_version，如果有保留特定版本的需求，可以手动修改，防止在更新时，把旧版本删除。
-
-3. versoin_deque.json，保留已下载的版本，用于自动清除旧版本
-4. version，保留最新版的版本，用于比对这次运行检测的最新版是否已经下载
-5. latest_link.json，保存下载项最新版本的下载链接
+config_and_data_files 目录:
+1. config.yaml，程序配置文件
+2. items.yaml，下载项配置文件
+3. retained_version，如果有保留特定版本的需求，可以手动修改，防止在更新时，把旧版本删除。
+4. versoin_deque.json，保留已下载的版本，用于自动清除旧版本
+5. version，保留最新版的版本，用于比对这次运行检测的最新版是否已经下载
+6. latest_link.json，保存下载项最新版本的下载链接
 
 ---
 
 
-程序一次只处理一个下载项，因此下载项应该相互独立。下载项可能有多个版本，不同平台（Windows、Linux、Android）和 CPU 架构（AMD64、ARM64）的组合。
+程序使用异步，
+1. 并发下载不同 website 的下载项
+2. 对于同一 website，可以设置并发量，不过一个下载项可能有多个可下载文件，因此并发下载的数量大于等于并发量
+3. 因此下载项应该相互独立。下载项可能有多个版本，不同平台（Windows、Linux、Android）和 CPU 架构（AMD64、ARM64）的组合，它们都会并发下载。
 
 
 ## 管理员
@@ -46,7 +49,7 @@ config.yaml 示例
 
 ```yaml
 is_production: true
-curl_path: curl         # curl 二进制程序的路径
+concurrent_amount: 3   # 下载同一 website 的下载项的并发量
 minio_server: 185.149.146.103:9000   # minio 服务端的 API 地址，必须是这种形式，可以用域名，但不能带 http 
 minio_client_path: mc   # mc 二进制程序的路径
 minio_host_alias: uf    # mc 添加主机时的 ALIAS
@@ -113,7 +116,9 @@ category_title、image 是 UpdateFetchWeb 会用到的，可以省略。
 对于 GitHub，sample_url 前面一部分是一样的，因此有一种简写形式 `~/${tag}/Xray-${system}-${ARCHITECTURE}${suffix_name}`
 
 
-> tag 切片。如果 GitHub 某项目的 tag 是这种 desktop-v2023.12.1，但实际文件名要的是 2023.12.1，可以使用切片取 tag 的一部分，出于代码的简便起见，不支持 `[9:]` 这种写法，而是 `[9:18]` 不能有空的，两边都要有数字，不检查是否合法。由于左闭右开，要填 18，而不是 17。
+> tag 切片。如果 GitHub 某项目的 tag 是这种 desktop-v2023.12.1，但实际文件名要的是 2023.12.1，可以使用切片取 tag 的一部分。
+
+> 第一个字符的索引取 1，出于代码的简便，不支持 `[9:]` 这种写法，而是 `[9:18]` 不能有空的，两边都要有数字，不检查是否合法。由于左闭右开，要填 18，而不是 17。最终是 `${tag[9:18]}`
 
 
 ---
