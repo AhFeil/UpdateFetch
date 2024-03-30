@@ -50,6 +50,9 @@ class Config(object):
         self.minio_client_path = configs['minio_client_path']
         self.minio_host_alias = configs['minio_host_alias']
         self.bucket = configs['bucket']
+        self.daily_runtime = configs['daily_runtime']
+        self.WAIT = configs['WAIT']
+
         if (X_GitHub_Api_Version := configs.get('X-GitHub-Api-Version')) and (Authorization := configs.get('Authorization')):
             self.GithubAPI = {'X_GitHub_Api_Version': X_GitHub_Api_Version, 'Authorization': Authorization}
         else:

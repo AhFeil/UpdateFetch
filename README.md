@@ -55,6 +55,10 @@ minio_client_path: mc   # mc 二进制程序的路径
 minio_host_alias: uf    # mc 添加主机时的 ALIAS
 bucket: updatefetch     # mc 上传时，要放到哪个 bucket
 
+# 定时
+daily_runtime: 00:31   # 每天何时运行一次
+WAIT: 1800             # 多长时间检查一次是否该运行了，单位秒，大一点节省资源
+
 # GitHub API ，解除查找最新版本时的请求限制。如果不了解，可删除
 X-GitHub-Api-Version: "2022-11-28"
 Authorization: "Bearer github_pat_11xxxxxxkBbu0_mfgypv21NLBCxxxxxxxxxxxxxxxxxxxxxxxxxxxxxbQTWJA1"

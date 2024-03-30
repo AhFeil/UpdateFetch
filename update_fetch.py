@@ -12,7 +12,8 @@ from configHandle import setup_logger, APILimitException
 import preprocess
 
 logger = setup_logger(__name__)
-
+config = preprocess.config
+data = preprocess.data
 
 async def update_one(item_name, item, config, data, allocate_downloader, allocate_uploader, webapi):
     """对一个下载项进行下载，一个 item 就是一个下载项目"""
@@ -62,9 +63,6 @@ async def main():
     """异步入口"""
     today = datetime.datetime.now()
     logger.info(f"本次运行时间为 {today.year}-{today.month}-{today.day}")
-
-    config = preprocess.config
-    data = preprocess.data
     
     up_app = config.minio_client_path
     webapi = WebAPI(config.web_domain, config.web_Token)
