@@ -1,8 +1,6 @@
 """
 自动调用类工厂, 它的作用是根据输入创建一系列功能类似的其他类的实例，并自动调用这些实例。
 """
-import json
-
 from ConcreteClass import GithubDownloader, FDroidDownloader, Only1LinkDownloader, MinioUploader
 from configHandle import setup_logger
 logger = setup_logger(__name__)
@@ -10,11 +8,16 @@ logger = setup_logger(__name__)
 
 class AllocateDownloader:
     """调度下载器"""
+    __slots__ = ("download_dir", "version_data", "GithubAPI", "downloader_cls")
+
     def __init__(self, download_dir, version_data, GithubAPI):
         self.download_dir = download_dir
         self.version_data = version_data
         self.GithubAPI = GithubAPI
-        self.downloader_cls = {"github": GithubDownloader, "fdroid": FDroidDownloader, "only1link": Only1LinkDownloader}
+        # 下载器一次只能处理同一个 item，可以同时多个不同平台的
+        self.downloader_cls = {"github": GithubDownloader, 
+                               "fdroid": FDroidDownloader, 
+                               "only1link": Only1LinkDownloader}
 
     async def call_instance(self, downloader_name, item_name, item):
         if downloader_name in self.downloader_cls:

@@ -40,6 +40,8 @@ def universal_data(config_instance, item_config, version, name_and_latest_link):
 
 class WebAPI():
     """向 Web 增、删、更新 item 的"""
+    # __slots__ = ("name", "age")
+
     def __init__(self, web_domain, web_Token):
         self.web_domain = web_domain
         self.web_Token = web_Token

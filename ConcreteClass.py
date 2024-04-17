@@ -4,7 +4,6 @@ import re
 import httpx
 from bs4 import BeautifulSoup
 import subprocess
-from collections import deque
 import asyncio
 
 from AbstractClass import AbstractDownloader, AbstractUploader
@@ -76,7 +75,7 @@ class GithubDownloader(AbstractDownloader):
         """检查下载直链是否有效，无效的用空字符串替代"""
         # 对于 GitHub，如果无效，会返回 404，有效则是 302
         valid_codes = [302]
-        return await asyncio.gather(*(self.get_valid_url(url, valid_codes) for url in download_urls))
+        return await asyncio.gather(*(AbstractDownloader.get_valid_url(url, valid_codes) for url in download_urls))
 
 
 class Only1LinkDownloader(AbstractDownloader):
@@ -107,7 +106,7 @@ class Only1LinkDownloader(AbstractDownloader):
         """检查下载直链是否有效，无效的用空字符串替代"""
         # 对于 GitHub，如果无效，会返回 404，有效则是 302
         valid_codes = [302]
-        return await asyncio.gather(*(self.get_valid_url(url, valid_codes) for url in download_urls))
+        return await asyncio.gather(*(AbstractDownloader.get_valid_url(url, valid_codes) for url in download_urls))
 
 
 class FDroidDownloader(AbstractDownloader):
@@ -178,7 +177,7 @@ class FDroidDownloader(AbstractDownloader):
         """检查下载直链是否有效"""
         # 对于 FDroid，有效则是 200
         valid_codes = [200]
-        return await asyncio.gather(*(self.get_valid_url(url, valid_codes) for url in download_urls))
+        return await asyncio.gather(*(AbstractDownloader.get_valid_url(url, valid_codes) for url in download_urls))
     
     def format_filename(self, latest_version):
         """生成文件名，用以保存文件"""

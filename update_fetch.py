@@ -1,6 +1,4 @@
 import os
-import sys
-import json
 import datetime
 from itertools import groupby
 from math import ceil
@@ -9,11 +7,9 @@ import asyncio
 from AutoCallerFactory import AllocateDownloader, AllocateUploader
 from apiHandle import WebAPI, universal_data
 from configHandle import setup_logger, APILimitException
-import preprocess
 
 logger = setup_logger(__name__)
-config = preprocess.config
-data = preprocess.data
+
 
 async def update_one(item_name, item, config, data, allocate_downloader, allocate_uploader, webapi):
     """对一个下载项进行下载，一个 item 就是一个下载项目"""
@@ -59,7 +55,7 @@ async def update(items, config, data, allocate_downloader, allocate_uploader, we
     logger.info(f"****** Finish to download items from {website} ******")
 
 
-async def main():
+async def main(config, data):
     """异步入口"""
     today = datetime.datetime.now()
     logger.info(f"本次运行时间为 {today.year}-{today.month}-{today.day}")
@@ -80,6 +76,13 @@ async def main():
     await asyncio.gather(*multi_update)
 
 
+
+
+
 if __name__ == '__main__':
-    asyncio.run(main())
+    import preprocess
+    config = preprocess.config
+    data = preprocess.data
+
+    asyncio.run(main(config, data))
 

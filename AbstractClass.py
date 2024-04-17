@@ -7,8 +7,6 @@ import httpx
 import aiofiles
 from abc import ABC, abstractmethod
 
-import ruamel.yaml
-
 from configHandle import setup_logger
 logger = setup_logger(__name__)
 
@@ -46,7 +44,8 @@ class AbstractDownloader(ABC):
         """得到下载直链"""
         raise NotImplementedError
 
-    async def get_valid_url(self, url: str, valid_codes: list) -> str:
+    @staticmethod
+    async def get_valid_url(url: str, valid_codes: list) -> str:
         """根据状态码，判断网址是否有效，无效返回空字符串"""
         async with httpx.AsyncClient() as client:
             response = await client.head(url)
@@ -71,10 +70,11 @@ class AbstractDownloader(ABC):
                           for ((formated_sys, formated_arch), (_, _), suffix_name) in self.system_archs]
         return filenames
 
-    async def downloading(self, url, filename):
+    @staticmethod
+    async def downloading(url, filename, download_dir):
         """下载"""
         logger.info(f"start to download '{filename}': {url}")
-        filepath = os.path.join(self.download_dir, filename)
+        filepath = os.path.join(download_dir, filename)
         async with httpx.AsyncClient(follow_redirects=True) as client:
             resp = await client.get(url)
             try:
@@ -104,7 +104,7 @@ class AbstractDownloader(ABC):
         urls, filenames = self.format_url(latest_version), self.format_filename(latest_version)
         valid_urls = await self.get_valid_urls(urls)
         # get_valid_urls 处理时，无效的链接会被换为空字符串，因此要提取出有效的
-        download_concurrently = (self.downloading(download_url, filename) for download_url, filename in zip(valid_urls, filenames) if download_url)
+        download_concurrently = (AbstractDownloader.downloading(download_url, filename, self.download_dir) for download_url, filename in zip(valid_urls, filenames) if download_url)
         filepaths = await asyncio.gather(*download_concurrently)
         # 去除下载失败的
         filepaths = [fp for fp in filepaths if fp]
