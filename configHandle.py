@@ -20,6 +20,7 @@ class Config(object):
         self.retained_version_file = 'retained_version.yaml'   # 用于存储某些软件能保留的特定版本
         self.latest_version_link_file = 'latest_link.json'   # 用于反代时搜索最新版的链接
         self.items_file = 'items.yaml'   # 保存下载项目和其配置的文件
+        self.sqlite_db = 'items.db'
 
         # 这些是根据上面的文件名，确定实际路径
         self.version_file_path = os.path.join(self.data_dir, self.version_file)
@@ -27,6 +28,7 @@ class Config(object):
         self.retained_version_file_path = os.path.join(self.data_dir, self.retained_version_file)
         self.latest_version_link_filepath = os.path.join(self.data_dir, self.latest_version_link_file)
         self.items_file_path = os.path.join(self.data_dir, self.items_file)
+        self.sqlite_db_path = os.path.join(self.data_dir, self.sqlite_db)
 
     def _load_config(self) -> dict:
         """定义如何加载配置文件"""

@@ -3,6 +3,7 @@ import sys
 import json
 from collections import deque
 from typing import TypedDict
+import sqlite3
 
 import ruamel.yaml
 
@@ -25,6 +26,41 @@ class Data(object):
 
         if not os.path.exists(self.config.items_file_path):   # 下载项目不存在，直接退出
             sys.exit("Warning! There is no items config file. exit.")
+        self.current_directory = os.getcwd()
+        self._items = self.reload_items()
+        self.conn = sqlite3.connect(config.sqlite_db_path, timeout=1, isolation_level=None)
+        cursor = self.conn.cursor()
+        cursor.execute(
+'''CREATE TABLE IF NOT EXISTS items_table (
+    id INTEGER PRIMARY KEY,
+    name TEXT,
+    version TEXT,
+    platform TEXT,
+    arch TEXT,
+    abs_path TEXT)''')
+
+    def insert_item_to_db(self, name: str, version: str, platform: str, arch: str, path: str):
+        abs_path = os.path.join(self.current_directory, self.config.temp_download_dir, path)
+        self.conn.cursor().execute("INSERT INTO items_table (name, version, platform, arch, abs_path) VALUES (?, ?, ?, ?, ?)",
+                    (name, version, platform, arch, abs_path))
+        # 更新
+        # cursor.execute("UPDATE users SET email=? WHERE id=?", ('updated@example.com', 1))
+
+    def get_and_check_path_from_db(self, name: str, platform: str, arch: str) -> str:
+        """返回路径"""
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT * FROM items_table WHERE name=? AND platform=? AND arch=?", (name, platform, arch))
+        info = cursor.fetchone()
+        if not info:
+            return ""
+        if os.path.isfile(info[-1]):
+            return info[-1]
+        else:
+            self.del_item_in_db_by_id(info[0])
+            return ""
+
+    def del_item_in_db_by_id(self, id: int):
+        self.conn.cursor().execute("DELETE FROM items_table WHERE id=?", (id, ))
 
     def _load_file(self) -> None:
         """如果是内容不会由外部改变的数据文件，可以预先加载，会手动修改内容的，在后面程序中实时 reload"""
@@ -114,3 +150,6 @@ class Data(object):
         for name, item in items.items():
             item["name"] = name
         return items
+
+    def get_items(self) -> list[Item]:
+        return self._items

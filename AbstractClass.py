@@ -3,9 +3,10 @@ import asyncio
 import httpx
 import aiofiles
 from abc import ABC, abstractmethod
-
+import preprocess
 from configHandle import setup_logger
 logger = setup_logger(__name__)
+data = preprocess.data
 
 
 class APILimitException(Exception):
@@ -47,35 +48,30 @@ class AbstractDownloader(ABC):
         raise NotImplementedError
 
     @staticmethod
-    async def get_valid_url(url: str, valid_codes: list) -> str:
+    async def _is_valid_code(url: str, valid_codes: list) -> bool:
         """根据状态码，判断网址是否有效，无效返回空字符串"""
         async with httpx.AsyncClient() as client:
             response = await client.head(url)
-            status_code = response.status_code
-            if status_code in valid_codes:
-                return url
+            if response.status_code in valid_codes:
+                return True
             else:
-                # 如果只是添加有效网址，在生成文件名那里，会无法对应。因此，无效网址用空字符串替代
-                logger.warning(f"The Download url is invalid: '{url}' with status code {status_code}")
-                return ""
-    
+                logger.warning(f"The Download url is invalid: '{url}' with status code {response.status_code}")
+                return False
+
     @abstractmethod
-    async def get_valid_urls(self, download_urls):
+    async def is_valid_url(self, download_url) -> bool:
         """检查下载直链是否有效"""
         raise NotImplementedError
 
-    def format_filename(self, latest_version: str) -> list[str]:
-        """生成文件名，用以保存文件"""
-        latest_version = latest_version[:]
-        latest_version = latest_version.replace(r'%2F', '-')   # 应对 hys2 情况
-        filenames = [f'{self.name}-{formated_sys}-{formated_arch}-{latest_version}{suffix_name}'
-                          for ((formated_sys, formated_arch), (_, _), suffix_name) in self.system_archs]
-        return filenames
-
     @staticmethod
-    async def downloading(url, filename, download_dir):
+    async def downloading(url, filename, download_dir, is_valid_url):
         """下载"""
         logger.info(f"start to download '{filename}': {url}")
+        v = await is_valid_url(url)
+        if not v:
+            logger.info(f"{url} is invalid")
+            return ""
+
         filepath = os.path.join(download_dir, filename)
         async with httpx.AsyncClient(follow_redirects=True) as client:
             resp = await client.get(url)
@@ -103,18 +99,15 @@ class AbstractDownloader(ABC):
             logger.info(f"Current version for {self.name} is up to date.")
             return [], latest_version
 
-        urls, filenames = self.format_url(latest_version), self.format_filename(latest_version)
-        valid_urls = await self.get_valid_urls(urls)
-        # get_valid_urls 处理时，无效的链接会被换为空字符串，因此要提取出有效的
+        urls_and_meta_info = self.format_url(latest_version)
         try:
-            download_concurrently = (AbstractDownloader.downloading(download_url, filename, self.download_dir) for download_url, filename in zip(valid_urls, filenames) if download_url)
+            download_concurrently = (AbstractDownloader.downloading(url, filename, self.download_dir, self.is_valid_url)
+                                     for url, _, _, _, _, filename in urls_and_meta_info)
             filepaths = await asyncio.gather(*download_concurrently)
-            # 去除下载失败的
-            filepaths = [fp for fp in filepaths if fp]
-            # 更新记录的最新版本。
-            if filepaths:
-                # 我们认为，前一步要做到：要么成功下载后传路径列表，要么没下载到实际文件传空列表。  保证这点，就可以用这个判断来正确更新当前版本
-                self.version_data[self.name] = latest_version
+            for fp, u in zip(filepaths, urls_and_meta_info):
+                if not fp:
+                    continue
+                data.insert_item_to_db(*u[1:])
         except APILimitException:
             logger.warning("-----API rate limit exceeded for machine IP-----")
             filepaths = []

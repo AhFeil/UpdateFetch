@@ -1,8 +1,7 @@
 # self
 config_and_data_files/
 temp_download/
-test_downloader.py
-test_api.py
+dev_cheat.md
 
 # ---> Python
 # Byte-compiled / optimized / DLL files

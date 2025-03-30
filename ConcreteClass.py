@@ -47,11 +47,12 @@ class GithubDownloader(AbstractDownloader):
     def format_url(self, latest_version):
         # 构造下载链接
         sample_url = self.sample_url
-        download_urls = []
+        urls_and_meta_info = []
         if sample_url[0] == '~':
             front_url = f"https://github.com/{self.project_name}/releases/download"
             sample_url = sample_url.replace('~', front_url)
-        for ((_, _), (sys, arch), suffix_name) in self.system_archs:
+        for ((formated_sys, formated_arch), (sys, arch), suffix_name) in self.system_archs:
+            filename = f"{self.name}-{formated_sys}-{formated_arch}-{latest_version.replace(r'%2F', '-')}{suffix_name}"
             download_url = sample_url.replace('${tag}', latest_version).\
                                replace('${ARCHITECTURE}', arch).\
                                replace('${system}', sys).\
@@ -66,14 +67,15 @@ class GithubDownloader(AbstractDownloader):
                 else:
                     return tag
             download_url = re.sub(r'\$\{tag\[(\d+:\d+)\]\}', replace_tag, download_url)   # 如果有切片，前面替换会漏下来，由 re 替换
-            download_urls.append(download_url)
-        return download_urls
+            urls_and_meta_info.append((download_url, self.name, latest_version, formated_sys, formated_arch, filename))
+        return urls_and_meta_info
 
-    async def get_valid_urls(self, download_urls):
+
+    async def is_valid_url(self, url):
         """检查下载直链是否有效，无效的用空字符串替代"""
         # 对于 GitHub，如果无效，会返回 404，有效则是 302
         valid_codes = [302]
-        return await asyncio.gather(*(AbstractDownloader.get_valid_url(url, valid_codes) for url in download_urls))
+        return await AbstractDownloader._is_valid_code(url, valid_codes)
 
 
 class Only1LinkDownloader(AbstractDownloader):
@@ -83,7 +85,6 @@ class Only1LinkDownloader(AbstractDownloader):
 
         self.name = item_config["name"]
         self.multi = item_config["multi"]
-        # 对应多版本，把每个版本都放入列表 ((formated_sys, formated_arch), (sys, arch), suffix_name)
         self.system_archs = [((one['system'], one['architecture']), (one['system'], one['architecture']), one['suffix']) for one in self.multi]
 
     async def get_latest_version(self):
@@ -95,15 +96,17 @@ class Only1LinkDownloader(AbstractDownloader):
         return latest_version
 
     def format_url(self, latest_version):
-        # 构造下载链接
-        download_urls = [one['downlink'] for one in self.multi]
-        return download_urls
+        urls_and_meta_info = []
+        for one in self.multi:
+            filename = f"{self.name}-{one['system']}-{one['architecture']}-{latest_version}{one['suffix']}"
+            urls_and_meta_info.append((one['downlink'], self.name, latest_version, one['system'], one['architecture'], filename))
+        return urls_and_meta_info
 
-    async def get_valid_urls(self, download_urls):
+    async def is_valid_url(self, url):
         """检查下载直链是否有效，无效的用空字符串替代"""
         # 对于 GitHub，如果无效，会返回 404，有效则是 302
         valid_codes = [302]
-        return await asyncio.gather(*(AbstractDownloader.get_valid_url(url, valid_codes) for url in download_urls))
+        return await AbstractDownloader._is_valid_code(url, valid_codes)
 
 
 class FDroidDownloader(AbstractDownloader):
@@ -161,20 +164,21 @@ class FDroidDownloader(AbstractDownloader):
 
     def format_url(self, latest_version):
         # 构造下载链接
-        download_urls = []
+        urls_and_meta_info = []
         for version_name, version_code, arch in self.versions:
             latest_version = version_code
+            filename = f'{self.name}-android-{arch}-{latest_version}.apk'
             download_url = self.dl_url + '_' + latest_version + '.apk'
-            download_urls.append(download_url)
+            urls_and_meta_info.append((download_url, self.name, latest_version, "android", arch, filename))
             logger.info(download_url)
-        return download_urls
+        return urls_and_meta_info
 
-    async def get_valid_urls(self, download_urls):
+    async def is_valid_url(self, url):
         """检查下载直链是否有效"""
         # 对于 FDroid，有效则是 200
         valid_codes = [200]
-        return await asyncio.gather(*(AbstractDownloader.get_valid_url(url, valid_codes) for url in download_urls))
-    
+        return await AbstractDownloader._is_valid_code(url, valid_codes)
+
     def format_filename(self, latest_version):
         """生成文件名，用以保存文件"""
         filenames = [f'{self.name}-android-{self.search_unified_arch[arch]}-{version_name}.apk'

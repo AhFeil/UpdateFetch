@@ -12,8 +12,7 @@ logger = setup_logger(__name__)
 
 async def update_one(item, config, data, allocate_downloader: AllocateDownloader):
     """对一个下载项进行下载，一个 item 就是一个下载项目"""
-    instance_name = item['website']
-    filepaths, latest_version = await allocate_downloader.call_instance(instance_name, item)
+    filepaths, latest_version = await allocate_downloader.call_instance(item)
 
 async def update(items, config, data, allocate_downloader, concurrent_amount=1, website="undefined"):
     """同一 website 的下载项，执行最大并发量的异步下载"""
