@@ -33,10 +33,10 @@ class AbstractDownloader(ABC):
     
     def is_out_of_date(self, latest_version: str) -> bool:
         """检查是否下载，比如检查最新版本是否还是之前已经下过的"""
-        current_version = self.version_data.get(self.item_name)
+        current_version = self.version_data.get(self.name)
 
         if current_version == latest_version:
-            logger.info(f"version {latest_version} is same for {self.item_name}")
+            logger.info(f"version {latest_version} is same for {self.name}")
             return False
         else:
             return True
@@ -114,7 +114,7 @@ class AbstractDownloader(ABC):
             # 更新记录的最新版本。
             if filepaths:
                 # 我们认为，前一步要做到：要么成功下载后传路径列表，要么没下载到实际文件传空列表。  保证这点，就可以用这个判断来正确更新当前版本
-                self.version_data[self.item_name] = latest_version
+                self.version_data[self.name] = latest_version
         except APILimitException:
             logger.warning("-----API rate limit exceeded for machine IP-----")
             filepaths = []

@@ -22,7 +22,7 @@ class AllocateDownloader:
         self.version_data = version_data
         self.GithubAPI = GithubAPI
 
-    async def call_instance(self, downloader_name, item_name, item):
+    async def call_instance(self, downloader_name, item):
         cls = AllocateDownloader.downloader_classes.get(downloader_name)
         if not cls:
             logger.warning(f"No instance found with downloader_name '{downloader_name}'.")
@@ -30,8 +30,8 @@ class AllocateDownloader:
 
         instance = cls(self.download_dir)
         if downloader_name == 'github':
-            instance.import_item(item_name, item, self.version_data, self.GithubAPI)
+            instance.import_item(item, self.version_data, self.GithubAPI)
         else:
-            instance.import_item(item_name, item, self.version_data)   # 这里 version_data 一直是同一个，也就不用担心之前的分别实例化下载器的问题了
+            instance.import_item(item, self.version_data)   # 这里 version_data 一直是同一个，也就不用担心之前的分别实例化下载器的问题了
         res = await instance.run()
         return res

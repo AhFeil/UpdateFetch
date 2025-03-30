@@ -10,20 +10,19 @@ from dataHandle import Data
 logger = setup_logger(__name__)
 
 
-async def update_one(item_name, item, config, data, allocate_downloader: AllocateDownloader):
+async def update_one(item, config, data, allocate_downloader: AllocateDownloader):
     """对一个下载项进行下载，一个 item 就是一个下载项目"""
     instance_name = item['website']
-    filepaths, latest_version = await allocate_downloader.call_instance(instance_name, item_name, item)
+    filepaths, latest_version = await allocate_downloader.call_instance(instance_name, item)
 
 async def update(items, config, data, allocate_downloader, concurrent_amount=1, website="undefined"):
     """同一 website 的下载项，执行最大并发量的异步下载"""
     logger.info(f"****** Start to download items from {website} ******")
-    item_tuple_list = list(items.items())
     # 根据并发量，计算出要循环多少回合， 13 个下载项， 3 并发，就意味着 4 次完整循环，第五次就 1 个下载项的循环
-    rounds = ceil(len(item_tuple_list)/concurrent_amount)
+    rounds = ceil(len(items)/concurrent_amount)
     for bout in range(rounds):
         start = concurrent_amount * bout
-        multi_update_one = (update_one(item_tuple[0], item_tuple[1], config, data, allocate_downloader) for item_tuple in item_tuple_list[start:start + concurrent_amount])
+        multi_update_one = (update_one(item, config, data, allocate_downloader) for item in items[start:start + concurrent_amount])
         await asyncio.gather(*multi_update_one)
     data.save_version_deque_and()
     logger.info(f"****** Finish to download items from {website} ******")
@@ -35,11 +34,11 @@ async def main(config: Config, data: Data):
     allocate_downloader = AllocateDownloader(config.temp_download_dir, data.version_data, config.GithubAPI)
 
     # 对 items 进行分类
-    items = data.reload(config.items_file_path)   # 使得 schedule 每次运行时，可以更新，如果有新添加的项目
-    items = sorted(items.items(), key=lambda item : item[1]["website"])
-    items_in_diff_website = groupby(items, key=lambda item : item[1]["website"])
+    items = data.reload_items()   # 使得 schedule 每次运行时，可以更新，如果有新添加的项目
+    items = sorted(items.values(), key=lambda item : item["website"])
+    items_in_diff_website = groupby(items, key=lambda item : item["website"])
     # 不同 website 的下载项之间，使用异步来并发下载
-    multi_update = (update(dict(items), config, data, allocate_downloader, config.concurrent_amount, website) for website, items in items_in_diff_website)
+    multi_update = (update(list(items), config, data, allocate_downloader, config.concurrent_amount, website) for website, items in items_in_diff_website)
     await asyncio.gather(*multi_update)
 
 

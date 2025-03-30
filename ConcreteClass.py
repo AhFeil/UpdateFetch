@@ -12,8 +12,7 @@ logger = setup_logger(__name__)
 
 class GithubDownloader(AbstractDownloader):
     """专门下载 GitHub 项目 release 中的内容"""
-    def import_item(self, item_name, item_config, version_data, GithubAPI=None):
-        self.item_name = item_name
+    def import_item(self, item_config, version_data, GithubAPI=None):
         self.version_data = version_data
 
         self.name = item_config["name"]
@@ -79,8 +78,7 @@ class GithubDownloader(AbstractDownloader):
 
 class Only1LinkDownloader(AbstractDownloader):
     """专门下载只有一个下载链接的东西，比如 GitHub 项目 仓库里的 emby 客户端"""
-    def import_item(self, item_name, item_config, version_data):
-        self.item_name = item_name
+    def import_item(self, item_config, version_data):
         self.version_data = version_data
 
         self.name = item_config["name"]
@@ -110,8 +108,7 @@ class Only1LinkDownloader(AbstractDownloader):
 
 class FDroidDownloader(AbstractDownloader):
     """专门下载 f-droid.org 的 apk"""
-    def import_item(self, item_name, item_config, version_data):
-        self.item_name = item_name
+    def import_item(self, item_config, version_data):
         self.version_data = version_data
 
         self.name = item_config["name"]

@@ -2,11 +2,18 @@ import os
 import sys
 import json
 from collections import deque
+from typing import TypedDict
 
 import ruamel.yaml
 
 from configHandle import setup_logger
 logger = setup_logger(__name__)
+
+
+class Item(TypedDict):
+    name: str
+    category_title: str
+    website: str
 
 
 class Data(object):
@@ -21,11 +28,11 @@ class Data(object):
 
     def _load_file(self) -> None:
         """如果是内容不会由外部改变的数据文件，可以预先加载，会手动修改内容的，在后面程序中实时 reload"""
-        self.latest_links = self.reload(self.config.latest_version_link_filepath)
-        self.version_data = self.reload(self.config.version_file_path)
+        self.latest_links = self._reload(self.config.latest_version_link_filepath)
+        self.version_data = self._reload(self.config.version_file_path)
         # 这里应该想办法保证 retained_version 不可改变
-        self.retained_version = self.reload(self.config.retained_version_file_path)
-        version_list = self.reload(self.config.version_deque_file_path)
+        self.retained_version = self._reload(self.config.retained_version_file_path)
+        version_list = self._reload(self.config.version_deque_file_path)
         self.version_deque = {key: deque(value) for key, value in version_list.items()}
 
         # 获取 version_data 原始数据结构的哈希值，用于判断本次是否有更新
@@ -89,7 +96,7 @@ class Data(object):
         """确保数据文件的格式正确，后面程序才能无须再判断"""
         pass
 
-    def reload(self, file_path):
+    def _reload(self, file_path):
         """方便重载某个配置文件"""
         suffix_name = os.path.splitext(file_path)[1]   # 获取后缀名
         with open(file_path, 'r', encoding='utf-8') as f:
@@ -101,3 +108,9 @@ class Data(object):
                 raise Exception("Unknow file format")
         
         return content
+
+    def reload_items(self) -> list[Item]:
+        items = self._reload(self.config.items_file_path)
+        for name, item in items.items():
+            item["name"] = name
+        return items
