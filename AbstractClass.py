@@ -1,7 +1,4 @@
-import subprocess
 import os
-import json
-from collections import deque
 import asyncio
 import httpx
 import aiofiles
@@ -9,6 +6,11 @@ from abc import ABC, abstractmethod
 
 from configHandle import setup_logger
 logger = setup_logger(__name__)
+
+
+class APILimitException(Exception):
+    """为 GitHub 请求 API 限制准备的"""
+    pass
 
 
 class AbstractDownloader(ABC):
@@ -94,84 +96,27 @@ class AbstractDownloader(ABC):
                 return filepath
 
     async def run(self):
-        """调用以上命令，串联工作流程"""
+        """调用以上命令，串联工作流程，返回的 filepaths 为空列表作为出错的标志，不对外抛出异常"""
         latest_version = await self.get_latest_version()
-        
+
         if not self.is_out_of_date(latest_version):
             logger.info(f"Current version for {self.name} is up to date.")
             return [], latest_version
-        
+
         urls, filenames = self.format_url(latest_version), self.format_filename(latest_version)
         valid_urls = await self.get_valid_urls(urls)
         # get_valid_urls 处理时，无效的链接会被换为空字符串，因此要提取出有效的
-        download_concurrently = (AbstractDownloader.downloading(download_url, filename, self.download_dir) for download_url, filename in zip(valid_urls, filenames) if download_url)
-        filepaths = await asyncio.gather(*download_concurrently)
-        # 去除下载失败的
-        filepaths = [fp for fp in filepaths if fp]
-        # 更新记录的最新版本。
-        if filepaths:
-            # 我们认为，前一步要做到：要么成功下载后传路径列表，要么没下载到实际文件传空列表。  保证这点，就可以用这个判断来正确更新当前版本
-            self.version_data[self.item_name] = latest_version
+        try:
+            download_concurrently = (AbstractDownloader.downloading(download_url, filename, self.download_dir) for download_url, filename in zip(valid_urls, filenames) if download_url)
+            filepaths = await asyncio.gather(*download_concurrently)
+            # 去除下载失败的
+            filepaths = [fp for fp in filepaths if fp]
+            # 更新记录的最新版本。
+            if filepaths:
+                # 我们认为，前一步要做到：要么成功下载后传路径列表，要么没下载到实际文件传空列表。  保证这点，就可以用这个判断来正确更新当前版本
+                self.version_data[self.item_name] = latest_version
+        except APILimitException:
+            logger.warning("-----API rate limit exceeded for machine IP-----")
+            filepaths = []
+
         return filepaths, latest_version
-
-
-
-class AbstractUploader(ABC):
-    """
-    将文件上传，先指定用的软件路径和上传的位置
-    对于不同上传项，如果要并发使用，必须分别实例化，否则一些地址会混在一起
-    """
-    def __init__(self, app, server_path, version_deque, retained_version):
-        self.server_path = server_path
-        self.app = app
-        self.oldVersionCount = 2   # 保留几个旧版本，不含最新版本
-        self.version_deque = version_deque
-        self.retained_version = retained_version
-
-    @abstractmethod
-    def uploading(self, filepath):
-        """上传"""
-        raise NotImplementedError
-
-    @abstractmethod
-    def clear(self, filename):
-        """清理旧版本"""
-        raise NotImplementedError
-        
-    @abstractmethod
-    def get_uploaded_files_link(self):
-        """获取文件的下载链接"""
-        raise NotImplementedError
-
-    def get_links_dict(self):
-        """将下载项的所有文件的链接都放入列表，在字典中作为项目名的值，用于查询最新版下载地址"""
-        links = self.get_uploaded_files_link()
-        name = os.path.basename(self.filepaths[0]).split('-',1)[0]
-        dictionary = {name: links}
-        return dictionary
-
-    def upload(self, filepaths, item_name, latest_version) -> dict:
-        """调用以上命令，串联工作流程"""
-        self.filepaths = filepaths if not isinstance(filepaths, str) else [filepaths]
-        self.filenames = []
-        self.item_name = item_name
-        self.item_upload_path = self.server_path + '/' + self.item_name
-        self.latest_version = latest_version
-
-        for filepath in self.filepaths:
-            filename = os.path.basename(filepath)
-            self.filenames.append(filename)
-            self.uploading(filepath)
-            logger.info(filename + " have upload to server")
-        # 上传完，就把这个版本保存在队列里
-        if self.version_deque.get(self.item_name):
-            self.version_deque[self.item_name].appendleft(self.latest_version)
-        else:
-            temp_deque = deque()
-            temp_deque.appendleft(self.latest_version)
-            self.version_deque[self.item_name] = temp_deque
-        logger.info(f"{self.item_name} new version {self.latest_version} added to version deque")
-        self.clear(self.oldVersionCount)   # 当前还没想好怎么指定特别项目保留的版本数量，先用默认的
-
-        return self.get_links_dict()
-

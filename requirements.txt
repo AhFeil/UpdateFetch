@@ -3,3 +3,4 @@ aiofiles
 ruamel.yaml
 beautifulsoup4
 schedule
+fastapi[all]

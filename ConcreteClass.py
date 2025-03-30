@@ -3,11 +3,10 @@ import json
 import re
 import httpx
 from bs4 import BeautifulSoup
-import subprocess
 import asyncio
 
-from AbstractClass import AbstractDownloader, AbstractUploader
-from configHandle import setup_logger, APILimitException
+from AbstractClass import APILimitException, AbstractDownloader
+from configHandle import setup_logger
 logger = setup_logger(__name__)
 
 
@@ -184,45 +183,3 @@ class FDroidDownloader(AbstractDownloader):
         filenames = [f'{self.name}-android-{self.search_unified_arch[arch]}-{version_name}.apk'
                           for version_name, _, arch in self.versions]
         return filenames
-
-
-class MinioUploader(AbstractUploader):
-    """上传到 minio"""
-    def __init__(self, app, server_path, version_deque_file, retained_version_file, minio_server_path):
-        super().__init__(app, server_path, version_deque_file, retained_version_file)
-        # 由于 minio 客户端用的时候，是预先添加服务端，使用的时候，不需要真正的网址，不方便返回下载链接
-        # 这里添加上真正的网址
-        self.minio_server_path = minio_server_path
-
-    def uploading(self, filepath):
-        # 每种软件，一个文件夹
-        subprocess.run([self.app, 'mb', "--ignore-existing", self.item_upload_path])
-        subprocess.run([self.app, 'cp', filepath, self.item_upload_path])
-        logger.info(f"Uploaded file: {filepath}")
-
-    def clear(self, oldVersionCount):
-        if len(self.version_deque[self.item_name]) > oldVersionCount+1:
-            old_version = self.version_deque[self.item_name].pop()
-            if old_version in self.retained_version.get(self.item_name, []):
-                logger.info(f"{self.item_name} has a retained version: {old_version}, so it will not be removed")
-                return
-            if old_version == self.latest_version:
-                logger.info("old_version == latest_version")
-                return
-            result = subprocess.run([self.app, 'find', self.item_upload_path, "--name", f"*{old_version}.*"], capture_output=True, text=True)
-            old_filenames = result.stdout
-            filenames = old_filenames.split('\n')[:-1]
-            # 删除旧文件
-            for filename in filenames:
-                subprocess.run([self.app, 'rm', filename])
-            logger.info(f"{self.item_name} delete old version {old_version}")
-
-
-    def get_uploaded_files_link(self):
-        server_path = self.server_path.split("/")[1] + '/' + self.item_name
-        if self.minio_server_path.endswith("/"):
-            string = self.minio_server_path[:-1]
-        uploaded_files_link = [f"{string}/{server_path}/{file}" for file in self.filenames]
-        self.filenames = []   # 否则，前个软件下载的链接，会到后面的里
-        return uploaded_files_link
-
