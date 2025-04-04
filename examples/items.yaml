@@ -17,8 +17,7 @@ xray:
   image: https://ib.ahfei.blog/imagesbed/xray_logo_cpd-24-01-03.webp
   website: github
   project_name: XTLS/Xray-core
-  sample_url: 
-    ~/${tag}/Xray-${system}-${ARCHITECTURE}${suffix_name}
+  sample_url: ~/${tag}/Xray-${system}-${ARCHITECTURE}${suffix_name}
   system:
     windows: [windows, .zip]
     linux: [linux, .zip]
@@ -30,20 +29,7 @@ serverstatus-rust-server:
   image: https://ib.ahfei.blog/imagesbed/ServerStatus-rust-cover.webp
   website: github
   project_name: zdz/ServerStatus-Rust
-  sample_url: 
-    ~/${tag}/server-${ARCHITECTURE}-${system}${suffix_name}
-  system:
-    linux: [unknown-linux-musl, .zip]
-  architecture:
-    arm64: aarch64
-    amd64: x86_64
-serverstatus-rust-client:
-  category: Server
-  image: https://ib.ahfei.blog/imagesbed/ServerStatus-rust-cover.webp
-  website: github
-  project_name: zdz/ServerStatus-Rust
-  sample_url: 
-    ~/${tag}/client-${ARCHITECTURE}-${system}${suffix_name}
+  sample_url: ~/${tag}/server-${ARCHITECTURE}-${system}${suffix_name}
   system:
     linux: [unknown-linux-musl, .zip]
   architecture:
@@ -53,8 +39,7 @@ frp:
   category: Server
   website: github
   project_name: fatedier/frp
-  sample_url: 
-    ~/${tag}/frp_${tag[1:8]}_${system}_${ARCHITECTURE}${suffix_name}
+  sample_url: ~/${tag}/frp_${tag[1:8]}_${system}_${ARCHITECTURE}${suffix_name}
   system:
     windows: [windows, .zip]
     linux: [linux, .tar.gz]
@@ -65,8 +50,7 @@ ddns-go:
   category: Server
   website: github
   project_name: jeessy2/ddns-go
-  sample_url: 
-    ~/${tag}/ddns-go_${tag[1:10]}_${system}_${ARCHITECTURE}${suffix_name}
+  sample_url: ~/${tag}/ddns-go_${tag[1:10]}_${system}_${ARCHITECTURE}${suffix_name}
   system:
     windows: [windows, .zip]
     linux: [linux, .tar.gz]
@@ -78,8 +62,7 @@ hysteria2:
   image: https://ib.ahfei.blog/imagesbed/Hysteria2_logo.svg
   website: github
   project_name: apernet/hysteria
-  sample_url: 
-    https://github.com/apernet/hysteria/releases/download/${tag}/hysteria-${system}-${ARCHITECTURE}${suffix_name}
+  sample_url: ~/${tag}/hysteria-${system}-${ARCHITECTURE}${suffix_name}
   system:
     windows: [windows, .exe]
     linux: [linux, ""]
@@ -87,9 +70,9 @@ hysteria2:
     arm64: arm64
     amd64: amd64
 
-## Client
+## Mobile
 v2rayng:
-  category: Client
+  category: Mobile
   image: https://ib.ahfei.blog/imagesbed/v2rayng_logo_cpd.webp
   website: github
   project_name: 2dust/v2rayNG
@@ -99,9 +82,17 @@ v2rayng:
   architecture:
     arm64: arm64-v8a
     amd64: x86_64
-
+obsidian4android:
+  category: Mobile
+  website: github
+  project_name: obsidianmd/obsidian-releases
+  sample_url: ~/${tag}/Obsidian-${tag[1:6]}${suffix_name}
+  system:
+    android: [android, .apk]
+  architecture:
+    arm64: arm64
 bitwarden_mobile:
-  category: Client
+  category: Mobile
   image: https://ib.ahfei.blog/imagesbed/favicon-bitwarden.webp
   website: github
   project_name: bitwarden/mobile
@@ -110,8 +101,29 @@ bitwarden_mobile:
     android: [android, .apk]
   architecture:
     arm64: aarch64
+nekobox:
+  category: Mobile
+  image: https://ib.ahfei.blog/imagesbed/NekoBox_logo.webp
+  website: github
+  project_name: MatsuriDayo/NekoBoxForAndroid
+  sample_url: ~/${tag}/NB4A-${tag}-${ARCHITECTURE}${suffix_name}
+  system:
+    android: [android, .apk]
+  architecture:
+    arm64: arm64-v8a
+ankidroid:
+  category: Mobile
+  website: github
+  project_name: ankidroid/Anki-Android
+  sample_url: ~/${tag}/AnkiDroid-${tag[1:7]}-${ARCHITECTURE}${suffix_name}
+  system:
+    android: [android, .apk]
+  architecture:
+    arm64: arm64-v8a
+
+## Desktop
 bitwarden_client:
-  category: Client
+  category: Desktop
   image: https://ib.ahfei.blog/imagesbed/favicon-bitwarden.webp
   website: github
   project_name: bitwarden/clients
@@ -121,12 +133,11 @@ bitwarden_client:
   architecture:
     amd64: x86_64
 rustdesk_client:
-  category: Client
+  category: Desktop
   image: https://ib.ahfei.blog/imagesbed/Rustdesk_logo.svg
   website: github
   project_name: rustdesk/rustdesk
-  sample_url: 
-    ~/${tag}/rustdesk-${tag}-${ARCHITECTURE}${suffix_name}
+  sample_url: ~/${tag}/rustdesk-${tag}-${ARCHITECTURE}${suffix_name}
   system:
     windows: [win, .exe]
     android: [android, .apk]
@@ -134,7 +145,7 @@ rustdesk_client:
     arm64: aarch64-signed
     amd64: x86_64
 piclist:
-  category: Client
+  category: Desktop
   website: github
   project_name: Kuingsmile/PicList
   sample_url: ~/${tag}/PicList-Setup-${tag[1:7]}-${ARCHITECTURE}${suffix_name}
@@ -142,20 +153,108 @@ piclist:
     windows: [windows, .exe]
   architecture:
     amd64: 'x64'
-nekobox:
-  category: Client
-  image: https://ib.ahfei.blog/imagesbed/NekoBox_logo.webp
+ventoy:
+  category: Desktop
   website: github
-  project_name: MatsuriDayo/NekoBoxForAndroid
-  sample_url: ~/${tag}/NB4A-${tag}-${ARCHITECTURE}${suffix_name}
+  project_name: ventoy/Ventoy
+  sample_url: ~/${tag}/ventoy-${tag[1:7]}-${system}${suffix_name}
   system:
-    android: [android, .apk]
+    windows: [windows, .zip]
+    linux: [linux, .tar.gz]
   architecture:
-    arm64: arm64-v8a
+    amd64: amd64
+serverstatus-rust-client:
+  category: Desktop
+  image: https://ib.ahfei.blog/imagesbed/ServerStatus-rust-cover.webp
+  website: github
+  project_name: zdz/ServerStatus-Rust
+  sample_url: ~/${tag}/client-${ARCHITECTURE}-${system}${suffix_name}
+  system:
+    linux: [unknown-linux-musl, .zip]
+    windows: [pc-windows-msvc, .zip]
+  architecture:
+    arm64: aarch64
+    amd64: x86_64
+obsidian:
+  category: Desktop
+  website: github
+  project_name: obsidianmd/obsidian-releases
+  sample_url: ~/${tag}/Obsidian-${tag[1:6]}${suffix_name}
+  system:
+    windows: [windows, .exe]
+  architecture:
+    amd64: amd64
+tabby:
+  category: Desktop
+  website: github
+  project_name: Eugeny/tabby
+  sample_url: ~/${tag}/tabby-${tag[1:8]}-${system}-${ARCHITECTURE}${suffix_name}
+  system:
+    windows: [setup, .exe]
+    linux: [linux, .deb]
+  architecture:
+    amd64: x64
+    arm64: arm64
+mpvnet:
+  category: Desktop
+  website: github
+  project_name: mpvnet-player/mpv.net
+  sample_url: ~/${tag}/mpv.net-${tag}-setup.exe
+  system:
+    windows: [windows, .exe]
+  architecture:
+    amd64: amd64
+syncplay:
+  category: Desktop
+  website: github
+  project_name: Syncplay/syncplay
+  sample_url: ~/${tag}/Syncplay-${tag[1:6]}-Setup.exe
+  system:
+    windows: [windows, .exe]
+  architecture:
+    amd64: amd64
+CMWTAT_Digital:
+  category: Desktop
+  website: github
+  project_name: TGSAN/CMWTAT_Digital_Edition
+  sample_url: ~/${tag}/CMWTAT_Digital_Release_2_7_2_0.zip
+  system:
+    windows: [windows, .zip]
+  architecture:
+    amd64: amd64
+weasel:
+  category: Desktop
+  website: github
+  project_name: rime/weasel
+  sample_url: ~/${tag}/weasel-${tag}.0-installer${suffix_name}
+  system:
+    windows: [windows, .exe]
+  architecture:
+    amd64: amd64
+v2rayN:
+  category: Desktop
+  website: github
+  project_name: 2dust/v2rayN
+  sample_url: ~/${tag}/v2rayN-${system}-${ARCHITECTURE}${suffix_name}
+  system:
+    windows: [windows, .zip]
+  architecture:
+    amd64: "64"
+    arm64: arm64
+tiny-rdm:
+  category: Desktop
+  website: github
+  project_name: tiny-craft/tiny-rdm
+  sample_url: ~/${tag}/TinyRDM_Setup_${tag[1:6]}_${system}_${ARCHITECTURE}${suffix_name}
+  system:
+    windows: [windows, .exe]
+  architecture:
+    amd64: x64
+    arm64: arm64
 
 # F-Droid
 trime:   # 四种架构合一的，加上 4in1: true 即可，架构保持即可
-  category: Client
+  category: Mobile
   image: https://ib.ahfei.blog:443/imagesbed/Trime-logo-24-02-58.png
   website: fdroid
   project_name: com.osfans.trime
@@ -163,27 +262,27 @@ trime:   # 四种架构合一的，加上 4in1: true 即可，架构保持即可
   architecture:
     arm64: arm64-v8a
 nextcloud:
-  category: Client
+  category: Mobile
   website: fdroid
   project_name: com.nextcloud.client
   4in1: true
   architecture:
     arm64: arm64-v8a
 fcitx5_android:
-  category: Client
+  category: Mobile
   image: https://ib.ahfei.blog/imagesbed/fcitx5_android_logo-24-01-03.png
   website: fdroid
   project_name: org.fcitx.fcitx5.android
   architecture:
     arm64: arm64-v8a
 silverdict:
-  category: Client
+  category: Mobile
   website: fdroid
   project_name: com.gmail.blandilyte.silverdict
   architecture:
     arm64: arm64-v8a
 schildchat:
-  category: Client
+  category: Mobile
   image: http://ib.ahfei.blog/imagesbed/SchildChat_logo.webp
   website: fdroid
   project_name: de.spiritcroc.riotx
@@ -192,7 +291,7 @@ schildchat:
 
 # Only1Link
 emby_for_android:
-  category: Client
+  category: Mobile
   image: https://ib.ahfei.blog/imagesbed/favicon-emby.png
   website: only1link
   multi:
