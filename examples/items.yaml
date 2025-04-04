@@ -1,7 +1,7 @@
 # Github
 ## Server
 naive_client:
-  category_title: Server
+  category: Server
   website: github
   project_name: klzgrad/naiveproxy
   sample_url: 
@@ -13,7 +13,7 @@ naive_client:
     arm64: arm64
     amd64: x64
 xray:
-  category_title: Server
+  category: Server
   image: https://ib.ahfei.blog/imagesbed/xray_logo_cpd-24-01-03.webp
   website: github
   project_name: XTLS/Xray-core
@@ -26,7 +26,7 @@ xray:
     arm64: arm64-v8a
     amd64: '64'
 serverstatus-rust-server:
-  category_title: Server
+  category: Server
   image: https://ib.ahfei.blog/imagesbed/ServerStatus-rust-cover.webp
   website: github
   project_name: zdz/ServerStatus-Rust
@@ -38,7 +38,7 @@ serverstatus-rust-server:
     arm64: aarch64
     amd64: x86_64
 serverstatus-rust-client:
-  category_title: Server
+  category: Server
   image: https://ib.ahfei.blog/imagesbed/ServerStatus-rust-cover.webp
   website: github
   project_name: zdz/ServerStatus-Rust
@@ -50,7 +50,7 @@ serverstatus-rust-client:
     arm64: aarch64
     amd64: x86_64
 frp:
-  category_title: Server
+  category: Server
   website: github
   project_name: fatedier/frp
   sample_url: 
@@ -62,7 +62,7 @@ frp:
     arm64: arm64
     amd64: amd64
 ddns-go:
-  category_title: Server
+  category: Server
   website: github
   project_name: jeessy2/ddns-go
   sample_url: 
@@ -74,7 +74,7 @@ ddns-go:
     arm64: arm64
     amd64: x86_64
 hysteria2:
-  category_title: Server
+  category: Server
   image: https://ib.ahfei.blog/imagesbed/Hysteria2_logo.svg
   website: github
   project_name: apernet/hysteria
@@ -89,7 +89,7 @@ hysteria2:
 
 ## Client
 v2rayng:
-  category_title: Client
+  category: Client
   image: https://ib.ahfei.blog/imagesbed/v2rayng_logo_cpd.webp
   website: github
   project_name: 2dust/v2rayNG
@@ -101,7 +101,7 @@ v2rayng:
     amd64: x86_64
 
 bitwarden_mobile:
-  category_title: Client
+  category: Client
   image: https://ib.ahfei.blog/imagesbed/favicon-bitwarden.webp
   website: github
   project_name: bitwarden/mobile
@@ -111,7 +111,7 @@ bitwarden_mobile:
   architecture:
     arm64: aarch64
 bitwarden_client:
-  category_title: Client
+  category: Client
   image: https://ib.ahfei.blog/imagesbed/favicon-bitwarden.webp
   website: github
   project_name: bitwarden/clients
@@ -121,7 +121,7 @@ bitwarden_client:
   architecture:
     amd64: x86_64
 rustdesk_client:
-  category_title: Client
+  category: Client
   image: https://ib.ahfei.blog/imagesbed/Rustdesk_logo.svg
   website: github
   project_name: rustdesk/rustdesk
@@ -134,7 +134,7 @@ rustdesk_client:
     arm64: aarch64-signed
     amd64: x86_64
 piclist:
-  category_title: Client
+  category: Client
   website: github
   project_name: Kuingsmile/PicList
   sample_url: ~/${tag}/PicList-Setup-${tag[1:7]}-${ARCHITECTURE}${suffix_name}
@@ -143,7 +143,7 @@ piclist:
   architecture:
     amd64: 'x64'
 nekobox:
-  category_title: Client
+  category: Client
   image: https://ib.ahfei.blog/imagesbed/NekoBox_logo.webp
   website: github
   project_name: MatsuriDayo/NekoBoxForAndroid
@@ -155,7 +155,7 @@ nekobox:
 
 # F-Droid
 trime:   # 四种架构合一的，加上 4in1: true 即可，架构保持即可
-  category_title: Client
+  category: Client
   image: https://ib.ahfei.blog:443/imagesbed/Trime-logo-24-02-58.png
   website: fdroid
   project_name: com.osfans.trime
@@ -163,27 +163,27 @@ trime:   # 四种架构合一的，加上 4in1: true 即可，架构保持即可
   architecture:
     arm64: arm64-v8a
 nextcloud:
-  category_title: Client
+  category: Client
   website: fdroid
   project_name: com.nextcloud.client
   4in1: true
   architecture:
     arm64: arm64-v8a
 fcitx5_android:
-  category_title: Client
+  category: Client
   image: https://ib.ahfei.blog/imagesbed/fcitx5_android_logo-24-01-03.png
   website: fdroid
   project_name: org.fcitx.fcitx5.android
   architecture:
     arm64: arm64-v8a
 silverdict:
-  category_title: Client
+  category: Client
   website: fdroid
   project_name: com.gmail.blandilyte.silverdict
   architecture:
     arm64: arm64-v8a
 schildchat:
-  category_title: Client
+  category: Client
   image: http://ib.ahfei.blog/imagesbed/SchildChat_logo.webp
   website: fdroid
   project_name: de.spiritcroc.riotx
@@ -192,7 +192,7 @@ schildchat:
 
 # Only1Link
 emby_for_android:
-  category_title: Client
+  category: Client
   image: https://ib.ahfei.blog/imagesbed/favicon-emby.png
   website: only1link
   multi:

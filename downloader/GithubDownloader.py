@@ -7,9 +7,10 @@ from dataHandle import ItemInfo
 
 class GithubDownloader(AbstractDownloader):
     """专门下载 GitHub 项目 release 中的内容"""
-    async def get_latest_version(self, item_info: ItemInfo):
+    @classmethod
+    async def get_latest_version(cls, item_info: ItemInfo, api_token):
         url = f"https://api.github.com/repos/{item_info.project_name}/releases/latest"
-        headers = self.api_token if self.api_token else {}
+        headers = api_token if api_token else {}
         async with httpx.AsyncClient() as client:
             response = await client.get(url, headers=headers)
         data = json.loads(response.text)
@@ -18,7 +19,8 @@ class GithubDownloader(AbstractDownloader):
             raise APILimitException()
         return data["tag_name"].replace('/', r'%2F')
 
-    def format_url(self, item_info: ItemInfo, latest_version: str):
+    @classmethod
+    def format_url(cls, item_info: ItemInfo, latest_version: str):
         sample_url = item_info.sample_url
         if sample_url[0] == '~':
             front_url = f"https://github.com/{item_info.project_name}/releases/download"
@@ -39,7 +41,12 @@ class GithubDownloader(AbstractDownloader):
                 return tag
         return re.sub(r'\$\{tag\[(\d+:\d+)\]\}', replace_tag, url)
 
-    async def is_valid_url(self, url):
+    @classmethod
+    async def is_valid_url(cls, url):
         # 对于 GitHub，如果无效，会返回 404，有效则是 302
         valid_codes = [302]
         return await AbstractDownloader._is_valid_code(url, valid_codes)
+
+    @classmethod
+    def is_out_of_date(cls, latest_version: str, cur: str) -> bool:
+        return cur != latest_version

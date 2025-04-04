@@ -18,10 +18,10 @@ async def root(request: Request):
 
 @app.get("/download/")
 async def download(name: str, platform: str, arch: str):
-    info = preprocess.data.get_item_info(name, platform, arch)
-    if not info:
+    situation = preprocess.data.get_item_situation(name, platform, arch)
+    if not situation:
         raise HTTPException(status_code=404, detail="Resource not found")
-    fp = await allocate_downloader.get_file(info)
+    fp = await allocate_downloader.get_file(situation)
     if not fp:
         raise HTTPException(status_code=503, detail="Resource temporarily unavailable")
     return FileResponse(path=fp, filename=os.path.basename(fp))

@@ -19,19 +19,21 @@ class AbstractDownloader(ABC):
 
     async def __call__(self, item_info: ItemInfo):
         """调用以上命令，串联工作流程，出错则返回空字符串 filepath"""
-        latest_version = await self.get_latest_version(item_info)
+        latest_version = await self.__class__.get_latest_version(item_info, self.api_token)
         filename = f"{item_info.name}-{item_info.platform}-{item_info.arch}-{latest_version.replace(r'%2F', '-')}{item_info.suffix_name}"
-        url = self.format_url(item_info, latest_version)
-        filepath = await AbstractDownloader.downloading(self.logger, url, filename, self.download_dir, self.is_valid_url)
+        url = self.__class__.format_url(item_info, latest_version)
+        filepath = await AbstractDownloader.downloading(self.logger, url, filename, self.download_dir, self.__class__.is_valid_url)
         return filepath, latest_version
 
+    @classmethod
     @abstractmethod
-    async def get_latest_version(self, item_info: ItemInfo):
+    async def get_latest_version(cls, item_info: ItemInfo, api_token):
         """获取最新版本信息"""
         raise NotImplementedError
 
+    @classmethod
     @abstractmethod
-    def format_url(self, item_info: ItemInfo, latest_version):
+    def format_url(cls, item_info: ItemInfo, latest_version):
         """得到下载直链"""
         raise NotImplementedError
 
@@ -44,9 +46,16 @@ class AbstractDownloader(ABC):
                 return True
             return False
 
+    @classmethod
     @abstractmethod
-    async def is_valid_url(self, download_url) -> bool:
+    async def is_valid_url(cls, download_url) -> bool:
         """检查下载直链是否有效"""
+        raise NotImplementedError
+
+    @classmethod
+    @abstractmethod
+    def is_out_of_date(cls, latest_version: str, cur: str) -> bool:
+        """检查是否落后新版本"""
         raise NotImplementedError
 
     @staticmethod

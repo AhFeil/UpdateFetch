@@ -21,7 +21,7 @@ class Download(TypedDict):
 
 class Item(TypedDict):
     name: str
-    category_title: str
+    category: str
     website: str
     image: str
     # 下面是会变的
@@ -31,9 +31,8 @@ class Item(TypedDict):
 
 ItemInfo = namedtuple(
     "ItemInfo",
-    ["name", "category_title", "website", "project_name", "url", "sample_url", "platform", "arch", "original_platform", "original_arch", "suffix_name", "formated_dl_url", "image"]
+    ["name", "image", "category", "website", "project_name", "homepage", "sample_url", "platform", "arch", "original_platform", "original_arch", "suffix_name", "formated_dl_url", "version", "last_modified", "buf_id"]
 )
-# url 是下载项的官网主页
 
 class InvalidProfile(Exception):
     pass
@@ -58,61 +57,75 @@ class DBHandle():
         CREATE TABLE items_table (
             id INTEGER PRIMARY KEY,
             name TEXT,
-            category_title TEXT,
+            image TEXT,
+            category TEXT,
             website TEXT,
             project_name TEXT,
-            url TEXT,
+            homepage TEXT,
             sample_url TEXT,
             platform TEXT,
             arch TEXT,
             original_platform TEXT,
             original_arch TEXT,
             suffix_name TEXT,
-            formated_dl_url TEXT,
-            image TEXT)"""
+            formated_dl_url TEXT)"""
     )
 
-    joined_tables = textwrap.dedent("""\
+    get_web_elements = textwrap.dedent("""\
         SELECT
-            items_table.name, items_table.category_title, url, items_table.image, items_table.platform, items_table.arch, formated_dl_url, version, last_modified
+            items_table.name, category, homepage, image, items_table.platform, items_table.arch, formated_dl_url, version, last_modified
         FROM
             items_table
         LEFT JOIN dl_buf_table
-            ON dl_buf_table.name = items_table.name"""
+            ON dl_buf_table.name = items_table.name AND dl_buf_table.platform = items_table.platform AND dl_buf_table.arch = items_table.arch"""
+    )
+
+    get_item_situation = textwrap.dedent("""\
+        SELECT
+            dl_buf_table.id, items_table.name, website, project_name, sample_url, items_table.platform, items_table.arch, original_platform, original_arch, suffix_name, version, last_modified
+        FROM
+            items_table
+        INNER JOIN dl_buf_table
+            ON dl_buf_table.name = items_table.name AND dl_buf_table.platform = items_table.platform AND dl_buf_table.arch = items_table.arch
+        WHERE
+            items_table.name=? AND items_table.platform=? AND items_table.arch=?"""
     )
 
     def __init__(self, config: Config) -> None:
         self.config = config
 
     def execute(self, sql: str, arg_tuple=()):
-        conn = sqlite3.connect(self.config.sqlite_db_path, timeout=1, isolation_level=None)
-        conn.cursor().execute(sql, arg_tuple)
+        with sqlite3.connect(self.config.sqlite_db_path, isolation_level=None) as conn:
+            conn.execute(sql, arg_tuple)
 
-    # with todo
-    def insert_item_to_buf(self, name: str, version: str, platform: str, arch: str, path: str):
-        conn = sqlite3.connect(self.config.sqlite_db_path, timeout=1, isolation_level=None)
-        conn.cursor().execute(
-            "INSERT INTO dl_buf_table (name, version, platform, arch, abs_path) VALUES (?, ?, ?, ?, ?)",
-            (name, version, platform, arch, path)
-        )
+    def get_execute_result(self, all_of_them: bool, sql: str, arg_tuple=()):
+        with sqlite3.connect(self.config.sqlite_db_path, isolation_level=None, detect_types=sqlite3.PARSE_DECLTYPES) as conn:
+            cursor = conn.cursor()
+            cursor.execute(sql, arg_tuple)
+            return cursor.fetchall() if all_of_them else cursor.fetchone()
+
+    def insert_item_to_buf(self, name: str, platform: str, arch: str, version: str, path: str):
+        with sqlite3.connect(self.config.sqlite_db_path, isolation_level=None) as conn:
+            conn.execute(
+                "INSERT INTO dl_buf_table (name, platform, arch, version, abs_path) VALUES (?, ?, ?, ?, ?)",
+                (name, platform, arch, version, path)
+            )
+
+    def update_item_in_buf(self, id: int, version: str, path: str):
+        with sqlite3.connect(self.config.sqlite_db_path, isolation_level=None) as conn:
+            conn.execute("UPDATE dl_buf_table SET version = ?, abs_path = ? WHERE id = ?", (version, path, id))
 
     def get_item_from(self, table_name: str, name: str, platform: str, arch: str):
-        conn = sqlite3.connect(self.config.sqlite_db_path, timeout=1, isolation_level=None)
-        cursor = conn.cursor()
-        # 在 SQLite 中，表名和列名不能使用参数化查询的占位符（如 ?）
-        query = f"SELECT * FROM {table_name} WHERE name=? AND platform=? AND arch=?"
-        cursor.execute(query, (name, platform, arch))
-        return cursor.fetchone()
+        with sqlite3.connect(self.config.sqlite_db_path, isolation_level=None) as conn:
+            cursor = conn.cursor()
+            # 在 SQLite 中，表名和列名不能使用参数化查询的占位符（如 ?）
+            query = f"SELECT * FROM {table_name} WHERE name=? AND platform=? AND arch=?"
+            cursor.execute(query, (name, platform, arch))
+            return cursor.fetchone()
 
     def del_item_in_buf_by_id(self, id: int):
-        conn = sqlite3.connect(self.config.sqlite_db_path, timeout=1, isolation_level=None)
-        conn.cursor().execute("DELETE FROM dl_buf_table WHERE id=?", (id, ))
-
-    def get_joined_result(self):
-        conn = sqlite3.connect(self.config.sqlite_db_path, timeout=1, isolation_level=None, detect_types=sqlite3.PARSE_DECLTYPES)
-        cursor = conn.cursor()
-        cursor.execute(DBHandle.joined_tables)
-        return cursor.fetchall()
+        with sqlite3.connect(self.config.sqlite_db_path, isolation_level=None) as conn:
+            conn.execute("DELETE FROM dl_buf_table WHERE id=?", (id, ))
 
 
 class Data():
@@ -127,9 +140,21 @@ class Data():
         self.db = DBHandle(config)
         self.db.execute(DBHandle.create_dl_buf_table_if_not)
         self.reload_items()
+        if not config.is_production:
+            res = self.get_item_situation("naive_client", "windows", "amd64")
+            if res:   # 将一个版本更改，方便测试新版本更新能力
+                self.update_item_in_db(res, "", "")
 
     def insert_item_to_db(self, *args, **kwargs):
         self.db.insert_item_to_buf(*args, **kwargs)
+        self.update_categories()
+
+    def update_item_in_db(self, item: ItemInfo, version, filepath):
+        info = self.db.get_item_from("dl_buf_table", item.name, item.platform, item.arch)
+        if info:
+            self.db.update_item_in_buf(item.buf_id, version, filepath)
+        else:
+            self.db.insert_item_to_buf(item.name, item.platform, item.arch, version, filepath)
         self.update_categories()
 
     # 定位三元组可以提取 todo
@@ -146,33 +171,38 @@ class Data():
         return ""
 
     def get_item_info(self, name, platform, arch):
-        info = self.db.get_item_from("items_table", name, platform, arch)
-        return ItemInfo(*info[1:])
+        res = self.db.get_item_from("items_table", name, platform, arch)
+        return ItemInfo(*res[1:], None, None, None)
+
+    def get_item_situation(self, name, platform, arch):
+        res = self.db.get_execute_result(False, DBHandle.get_item_situation, (name, platform, arch))
+        if res:
+            return ItemInfo(name=res[1], image=None, category=None, website=res[2], project_name=res[3], homepage=None, sample_url=res[4], platform=res[5], arch=res[6], original_platform=res[7], original_arch=res[8], suffix_name=res[9], formated_dl_url=None, version=res[10], last_modified=res[11], buf_id=res[0])
+        return self.get_item_info(name, platform, arch)
 
     def reload_items(self):
         items = self._reload(self.config.items_file_path)
         self.db.execute("DROP TABLE IF EXISTS items_table")
         self.db.execute(DBHandle.create_items_table_if_not)
         for name, item in items.items():
-            url = self._get_full_url(item)
-            category_title = item.get("category_title", self.config.default_category)
+            homepage = self._get_full_url(item)
+            category = item.get("category", self.config.default_category)
             image = item.get("image", self.config.default_image)
             for ((platform, arch), (ori_platform, ori_arch), suffix_name) in self._get_system_archs(item):
                 formated_dl_url = f"/download/?name={name}&platform={platform}&arch={arch}"
-                self.db.execute("INSERT INTO items_table (name, category_title, website, project_name, url, sample_url, "
-                    "platform, arch, original_platform, original_arch, suffix_name, formated_dl_url, image)"
+                self.db.execute("INSERT INTO items_table (name, image, category, website, project_name, homepage, sample_url, "
+                    "platform, arch, original_platform, original_arch, suffix_name, formated_dl_url)"
                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    (name, category_title, item["website"], item.get("project_name", ""), url, item.get("sample_url", ""), 
-                    platform, arch, ori_platform, ori_arch, suffix_name, formated_dl_url, image)
+                    (name, image, category, item["website"], item.get("project_name", ""), homepage, item.get("sample_url", ""), 
+                    platform, arch, ori_platform, ori_arch, suffix_name, formated_dl_url)
                 )
         self.update_categories()
 
     def update_categories(self):
         categories = {}
-        res = self.db.get_joined_result()
+        res = self.db.get_execute_result(True, DBHandle.get_web_elements)
         res.sort(key=lambda item : item[0])
-        g = groupby(res, key=lambda item : item[0])
-        for name, items in g:
+        for name, items in groupby(res, key=lambda item : item[0]):
             downloads = []
             for item in items:
                 downloads.append({
@@ -180,13 +210,12 @@ class Data():
                     "architecture": item[5],
                     "link": item[6],
                 })
-            category_title = item[1]
-            if not categories.get(category_title):
-                categories[category_title] = []
-            # namedtuple todo
-            categories[category_title].append({
+            category = item[1]
+            if not categories.get(category):
+                categories[category] = []
+            categories[category].append({
                 "name": name,
-                "category_title": category_title,
+                "category": category,
                 "website": item[2],
                 "image": item[3],
                 "downloads": downloads,
