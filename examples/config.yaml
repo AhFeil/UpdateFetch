@@ -10,5 +10,5 @@ concurrent_amount_per_website: 3   # 下载同一 website 的下载项的并发�
 
 ## 下面不填的话，删除即可
 default_category: Uncategorized
-default_image: https://ib.ahfei.blog:443/imagesbed/undefined_image_url_200-24-01-05.webp
+default_image: https://ib.ahfei.blog/imagesbed/picture_has_been_chewed_up_by_cat_vfly2.webp
 default_website: https://github.com/AhFeil/updatefetch
