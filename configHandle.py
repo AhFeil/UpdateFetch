@@ -1,33 +1,47 @@
 import sys
 import os
+from typing import Generator, Any
 
-import ruamel.yaml
+from ruamel.yaml import YAML, YAMLError
+
 
 class Config(object):
-    def __init__(self, configs_path='./configs.yaml') -> None:
-        self.yaml = ruamel.yaml.YAML()
-        self.configs_path = os.path.abspath(configs_path)
+    def __init__(self, configs_path: tuple[str]) -> None:
+        self.yaml = YAML()
+        self.configs_path = configs_path
         self.reload()
-        # 用户可以不管，开发者可以改的
-        self.temp_download_dir = os.path.abspath('./temp_download') # 软件临时下载到这里
-        self.data_dir = './config_and_data_files'
-        # 一般无须改动的变量
-        self.items_file_path = os.path.join(self.data_dir, "items.yaml")   # 保存下载项目和其配置的文件
-        self.sqlite_db_path = os.path.join(self.data_dir, "uf.db")
 
-    def _load_config(self) -> dict:
+    def _load_config(self) -> Generator[dict, Any, Any]:
         """定义如何加载配置文件"""
-        if not os.path.exists(self.configs_path):
-            sys.exit("no configs file")
-        with open(self.configs_path, "r", encoding='utf-8') as fp:
-            return self.yaml.load(fp)
+        for f in self.configs_path:
+            try:
+                with open(f, "r", encoding='utf-8') as fp:
+                    configs = self.yaml.load(fp)
+                yield configs
+            except YAMLError as e:
+                sys.exit(f"The config file is illegal as a YAML: {e}")
+            except FileNotFoundError:
+                sys.exit(f"The config does not exist")
 
     def reload(self) -> None:
         """将配置文件里的参数，赋予单独的变量，方便后面程序调用"""
-        configs = self._load_config()
-        self.is_production = configs.get("is_production", True)
-        self.concurrent_amount = configs.get("concurrent_amount_per_website", 1)
-        self.GithubAPI = configs.get('GitHub_Api_Token', {})
-        self.default_category = configs.get('default_category', 'Uncategorized')
-        self.default_image = configs.get('default_image', "https://ib.ahfei.blog/imagesbed/picture_has_been_chewed_up_by_cat_vfly2.webp")
-        self.default_website = configs.get('default_website', "/")
+        for i, configs in enumerate(self._load_config()):
+            if configs.get("user_configuration"):
+                user_configs = configs
+            elif configs.get("program_configuration"):
+                program_configs = configs
+            else:
+                sys.exit(f"{self.configs_path[i]} unknow configuration, lacking key for identify")
+
+        # 默认无须用户改动的
+        self.items_file_path = os.path.abspath(program_configs["items_file"])
+        self.temp_download_dir = os.path.abspath(program_configs["temp_download_dir"]) 
+        self.data_dir = program_configs["data_dir"]
+        self.sqlite_db_path = os.path.join(self.data_dir, "uf.db")
+        # 用户配置
+        self.is_production = user_configs.get("is_production", True)
+        self.concurrent_amount = user_configs.get("concurrent_amount_per_website", 1)
+        self.GithubAPI = user_configs.get('GitHub_Api_Token', {})
+        self.default_category = user_configs.get('default_category', 'Uncategorized')
+        self.default_image = user_configs.get('default_image', "https://ib.ahfei.blog/imagesbed/picture_has_been_chewed_up_by_cat_vfly2.webp")
+        self.default_website = user_configs.get('default_website', "/")

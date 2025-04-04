@@ -1,0 +1,45 @@
+program_configuration: true
+
+items_file: ./config_and_data_files/items.yaml   # 下载项目的配置
+temp_download_dir: ./temp_download  # 软件临时下载到这里
+data_dir: ./config_and_data_files
+
+logging:
+  version: 1
+  disable_existing_loggers: False
+
+  formatters:
+    simple:
+      format: "%(asctime)s %(message)s"
+      datefmt: "%Y-%m-%d %H:%M:%S"
+    error:
+      format: "%(asctime)s %(name)s %(levelname)s %(filename)s::%(funcName)s[%(lineno)d]:%(message)s"
+
+  handlers:
+    console:
+      class: logging.StreamHandler
+      level: INFO
+      formatter: simple
+      stream: ext://sys.stdout
+
+    info_file_handler:
+      class: logging.handlers.RotatingFileHandler
+      level: INFO
+      formatter: simple
+      filename: uf_info.log
+      maxBytes: 10485760  # 10MB
+      backupCount: 20
+      encoding: utf8
+
+    error_file_handler:
+      class: logging.handlers.RotatingFileHandler
+      level: ERROR
+      formatter: error
+      filename: uf_error.log
+      maxBytes: 10485760  # 10MB
+      backupCount: 20
+      encoding: utf8
+
+  root:
+    level: INFO
+    handlers: [console, info_file_handler, error_file_handler]

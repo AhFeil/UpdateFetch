@@ -1,0 +1,13 @@
+user_configuration: true
+is_production: true
+concurrent_amount_per_website: 3   # 下载同一 website 的下载项的并发量
+
+# GitHub API ，如果不了解，可删除
+# GitHub_Api_Token:
+#   X-GitHub-Api-Version: "2022-11-28"
+#   Authorization: "Bearer github_pat_11AXxxxxTWJA1"
+
+## 下面不填的话，删除即可
+default_category: Uncategorized
+default_image: https://ib.ahfei.blog:443/imagesbed/undefined_image_url_200-24-01-05.webp
+default_website: https://github.com/AhFeil/updatefetch
