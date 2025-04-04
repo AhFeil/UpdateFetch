@@ -1,5 +1,6 @@
 import sys
 import os
+import logging.config
 from typing import Generator, Any
 
 from ruamel.yaml import YAML, YAMLError
@@ -33,6 +34,7 @@ class Config(object):
             else:
                 sys.exit(f"{self.configs_path[i]} unknow configuration, lacking key for identify")
 
+        logging.config.dictConfig(program_configs["logging"])
         # 默认无须用户改动的
         self.items_file_path = os.path.abspath(program_configs["items_file"])
         self.temp_download_dir = os.path.abspath(program_configs["temp_download_dir"]) 
