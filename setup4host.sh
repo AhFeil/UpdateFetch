@@ -21,6 +21,7 @@ then
     cp examples/pgm_config.yaml config_and_data_files/pgm_config.yaml && \
     cp examples/items.yaml config_and_data_files/items.yaml
 fi
+mkdir -p temp_download
 
 # 创建 systemd 配置文件
 if [ ! -d ${program_name}.service ]

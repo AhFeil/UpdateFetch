@@ -141,7 +141,7 @@ class Data():
 
         if os.path.isfile(info[-1]):
             return info[-1]
-        self.del_item_in_db_by_id(info[0])
+        self.db.del_item_in_buf_by_id(info[0])
         self.update_categories()
         return ""
 
