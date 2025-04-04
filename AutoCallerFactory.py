@@ -1,46 +1,43 @@
-"""
-自动调用类工厂, 它的作用是根据输入创建一系列功能类似的其他类的实例，并自动调用这些实例。
-"""
-from ConcreteClass import GithubDownloader, FDroidDownloader, Only1LinkDownloader
-import preprocess
-from configHandle import setup_logger
-logger = setup_logger(__name__)
-data = preprocess.data
+import logging
+
+from downloader import APILimitException, downloader_classes
+from dataHandle import ItemInfo, Data
+
 
 class AllocateDownloader:
-    """调度下载器"""
-    __slots__ = ("download_dir", "version_data", "GithubAPI")
+    """调度下载器，不对外抛出下载器的异常"""
+    __slots__ = ("logger", "data", "download_dir")
 
-    # 下载器一次只能处理同一个 item，可以同时多个不同平台的
-    downloader_classes = {
-        "github": GithubDownloader, 
-        "fdroid": FDroidDownloader, 
-        "only1link": Only1LinkDownloader
-    }
-
-    def __init__(self, download_dir, version_data, GithubAPI):
+    def __init__(self, data: Data, download_dir):
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.data = data
         self.download_dir = download_dir
-        self.version_data = version_data
-        self.GithubAPI = GithubAPI
 
-    async def call_instance(self, item):
-        downloader_name = item["website"]
-        cls = AllocateDownloader.downloader_classes.get(downloader_name)
+    async def call_instance(self, item: ItemInfo):
+        cls = downloader_classes.get(item.website)
         if not cls:
-            logger.warning(f"No instance found with downloader_name '{downloader_name}'.")
+            self.logger.warning(f"No instance found with downloader_name '{item.website}'.")
             return [], ""
-
         instance = cls(self.download_dir)
-        if downloader_name == 'github':
-            instance.import_item(item, self.version_data, self.GithubAPI)
+        # if not self.is_out_of_date(latest_version):
+        #     return
+        self.logger.info(f"there is a new version for {item.name}")
+        try:
+            fp, ver = await instance(item)
+        except APILimitException:
+            self.logger.warning("-----API rate limit exceeded for machine IP-----")
         else:
-            instance.import_item(item, self.version_data)   # 这里 version_data 一直是同一个，也就不用担心之前的分别实例化下载器的问题了
-        res = await instance.run()
-        return res
+            self.data.insert_item_to_db(item.name, ver, item.platform, item.arch, fp)
 
-    async def get_file(self, item, name: str, platform: str, arch: str):
-        filepath = data.get_and_check_path_from_db(name, platform, arch)
+    async def get_file(self, item_info: ItemInfo):
+        filepath = self.data.get_and_check_path_from_db(item_info.name, item_info.platform, item_info.arch)
         if filepath:
             return filepath
-        await self.call_instance(item)
-        return data.get_and_check_path_from_db(name, platform, arch)
+        await self.call_instance(item_info)
+        return self.data.get_and_check_path_from_db(item_info.name, item_info.platform, item_info.arch)
+
+    def is_out_of_date(self, latest_version: str, cur) -> bool:
+        """检查是否下载，比如检查最新版本是否还是之前已经下过的"""
+        if cur == latest_version:
+            return False
+        return True

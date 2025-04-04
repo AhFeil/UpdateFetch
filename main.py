@@ -1,29 +1,49 @@
 import os
 
-from fastapi import FastAPI
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, Request, HTTPException
+from fastapi.responses import HTMLResponse, FileResponse, PlainTextResponse
+from fastapi.templating import Jinja2Templates
 
-from AutoCallerFactory import AllocateDownloader
 import preprocess
-config = preprocess.config
-data = preprocess.data
-allocate_downloader = AllocateDownloader(config.temp_download_dir, data.version_data, config.GithubAPI)
+from AutoCallerFactory import AllocateDownloader
 
 app = FastAPI()
+templates = Jinja2Templates(directory='templates')
+allocate_downloader = AllocateDownloader(preprocess.data, preprocess.config.temp_download_dir)
 
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
+@app.get("/", response_class=HTMLResponse)
+async def root(request: Request):
+    context = {"categories": preprocess.data.categories}
+    return templates.TemplateResponse(request=request, name="index.html", context=context)
 
 @app.get("/download/")
 async def download(name: str, platform: str, arch: str):
-    item = data.get_items().get(name)
-    if not item:
-        return {"state": "no item"}
-    filepath = await allocate_downloader.get_file(item, name, platform, arch)
-    if not filepath:
-        return {"name": name, "platform": platform, "arch": arch}
-    return FileResponse(path=filepath, filename=os.path.basename(filepath))
+    info = preprocess.data.get_item_info(name, platform, arch)
+    if not info:
+        raise HTTPException(status_code=404, detail="Resource not found")
+    fp = await allocate_downloader.get_file(info)
+    if not fp:
+        raise HTTPException(status_code=503, detail="Resource temporarily unavailable")
+    return FileResponse(path=fp, filename=os.path.basename(fp))
+
+@app.get("/favicon.ico")
+async def favicon():
+    fp = "static/favicon.ico"
+    return FileResponse(path=fp, filename=os.path.basename(fp))
+
+
+from enum import Enum
+
+class AdditionalPage(Enum):
+    robots = "robots.txt"
+    sitemap = "sitemap.xml"
+
+# 缓存 todo
+@app.get("/{file}", response_class=PlainTextResponse)
+async def static_from_root(file: AdditionalPage):
+    with open(os.path.join("templates", file.value), 'r', encoding="utf-8") as f:
+        content = f.read()
+    return content
 
 
 if __name__ == '__main__':

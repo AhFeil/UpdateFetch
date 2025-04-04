@@ -1,135 +1,202 @@
+import logging
 import os
 import sys
 import json
-from collections import deque
+import textwrap
+from datetime import datetime
+from collections import namedtuple
+from itertools import groupby
 from typing import TypedDict
 import sqlite3
 
 import ruamel.yaml
 
-from configHandle import setup_logger
-logger = setup_logger(__name__)
+from configHandle import Config
 
+
+class Download(TypedDict):
+    platform: str
+    architecture: str
+    link: str
 
 class Item(TypedDict):
     name: str
     category_title: str
     website: str
+    image: str
+    # 下面是会变的
+    downloads: list[Download]
+    version: str
+    last_modified: datetime
+
+ItemInfo = namedtuple(
+    "ItemInfo",
+    ["name", "category_title", "website", "project_name", "url", "sample_url", "platform", "arch", "original_platform", "original_arch", "suffix_name", "formated_dl_url", "image"]
+)
+# url 是下载项的官网主页
+
+class InvalidProfile(Exception):
+    pass
+
+class InvalidItemProfile(InvalidProfile):
+    pass
 
 
-class Data(object):
-    def __init__(self, config) -> None:
+class DBHandle():
+    create_dl_buf_table_if_not = textwrap.dedent("""\
+        CREATE TABLE IF NOT EXISTS dl_buf_table (
+            id INTEGER PRIMARY KEY,
+            name TEXT,
+            version TEXT,
+            platform TEXT,
+            arch TEXT,
+            last_modified DATETIME DEFAULT CURRENT_TIMESTAMP,
+            abs_path TEXT)"""
+    )
+
+    create_items_table_if_not = textwrap.dedent("""\
+        CREATE TABLE items_table (
+            id INTEGER PRIMARY KEY,
+            name TEXT,
+            category_title TEXT,
+            website TEXT,
+            project_name TEXT,
+            url TEXT,
+            sample_url TEXT,
+            platform TEXT,
+            arch TEXT,
+            original_platform TEXT,
+            original_arch TEXT,
+            suffix_name TEXT,
+            formated_dl_url TEXT,
+            image TEXT)"""
+    )
+
+    joined_tables = textwrap.dedent("""\
+        SELECT
+            items_table.name, items_table.category_title, url, items_table.image, items_table.platform, items_table.arch, formated_dl_url, version, last_modified
+        FROM
+            items_table
+        LEFT JOIN dl_buf_table
+            ON dl_buf_table.name = items_table.name"""
+    )
+
+    def __init__(self, config: Config) -> None:
+        self.config = config
+
+    def execute(self, sql: str, arg_tuple=()):
+        conn = sqlite3.connect(self.config.sqlite_db_path, timeout=1, isolation_level=None)
+        conn.cursor().execute(sql, arg_tuple)
+
+    # with todo
+    def insert_item_to_buf(self, name: str, version: str, platform: str, arch: str, path: str):
+        conn = sqlite3.connect(self.config.sqlite_db_path, timeout=1, isolation_level=None)
+        conn.cursor().execute(
+            "INSERT INTO dl_buf_table (name, version, platform, arch, abs_path) VALUES (?, ?, ?, ?, ?)",
+            (name, version, platform, arch, path)
+        )
+
+    def get_item_from(self, table_name: str, name: str, platform: str, arch: str):
+        conn = sqlite3.connect(self.config.sqlite_db_path, timeout=1, isolation_level=None)
+        cursor = conn.cursor()
+        # 在 SQLite 中，表名和列名不能使用参数化查询的占位符（如 ?）
+        query = f"SELECT * FROM {table_name} WHERE name=? AND platform=? AND arch=?"
+        cursor.execute(query, (name, platform, arch))
+        return cursor.fetchone()
+
+    def del_item_in_buf_by_id(self, id: int):
+        conn = sqlite3.connect(self.config.sqlite_db_path, timeout=1, isolation_level=None)
+        conn.cursor().execute("DELETE FROM dl_buf_table WHERE id=?", (id, ))
+
+    def get_joined_result(self):
+        conn = sqlite3.connect(self.config.sqlite_db_path, timeout=1, isolation_level=None, detect_types=sqlite3.PARSE_DECLTYPES)
+        cursor = conn.cursor()
+        cursor.execute(DBHandle.joined_tables)
+        return cursor.fetchall()
+
+
+class Data():
+    def __init__(self, config: Config) -> None:
+        if not os.path.exists(config.items_file_path):   # 下载项目不存在，直接退出
+            sys.exit("Warning! There is no items config file.")
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.config = config
         self.yaml = ruamel.yaml.YAML()
-        self._make_sure_file_exist()
-        self._load_file()
+        # 每个表有变动时刷新
+        self.categories: dict[str, list[dict[str, str]]] = {}
+        self.db = DBHandle(config)
+        self.db.execute(DBHandle.create_dl_buf_table_if_not)
+        self.reload_items()
 
-        if not os.path.exists(self.config.items_file_path):   # 下载项目不存在，直接退出
-            sys.exit("Warning! There is no items config file. exit.")
-        self.current_directory = os.getcwd()
-        self._items = self.reload_items()
-        self.conn = sqlite3.connect(config.sqlite_db_path, timeout=1, isolation_level=None)
-        cursor = self.conn.cursor()
-        cursor.execute(
-'''CREATE TABLE IF NOT EXISTS items_table (
-    id INTEGER PRIMARY KEY,
-    name TEXT,
-    version TEXT,
-    platform TEXT,
-    arch TEXT,
-    abs_path TEXT)''')
+    def insert_item_to_db(self, *args, **kwargs):
+        self.db.insert_item_to_buf(*args, **kwargs)
+        self.update_categories()
 
-    def insert_item_to_db(self, name: str, version: str, platform: str, arch: str, path: str):
-        abs_path = os.path.join(self.current_directory, self.config.temp_download_dir, path)
-        self.conn.cursor().execute("INSERT INTO items_table (name, version, platform, arch, abs_path) VALUES (?, ?, ?, ?, ?)",
-                    (name, version, platform, arch, abs_path))
-        # 更新
-        # cursor.execute("UPDATE users SET email=? WHERE id=?", ('updated@example.com', 1))
-
+    # 定位三元组可以提取 todo
     def get_and_check_path_from_db(self, name: str, platform: str, arch: str) -> str:
         """返回路径"""
-        cursor = self.conn.cursor()
-        cursor.execute("SELECT * FROM items_table WHERE name=? AND platform=? AND arch=?", (name, platform, arch))
-        info = cursor.fetchone()
+        info = self.db.get_item_from("dl_buf_table", name, platform, arch)
         if not info:
             return ""
+
         if os.path.isfile(info[-1]):
             return info[-1]
-        else:
-            self.del_item_in_db_by_id(info[0])
-            return ""
+        self.del_item_in_db_by_id(info[0])
+        self.update_categories()
+        return ""
 
-    def del_item_in_db_by_id(self, id: int):
-        self.conn.cursor().execute("DELETE FROM items_table WHERE id=?", (id, ))
+    def get_item_info(self, name, platform, arch):
+        info = self.db.get_item_from("items_table", name, platform, arch)
+        return ItemInfo(*info[1:])
 
-    def _load_file(self) -> None:
-        """如果是内容不会由外部改变的数据文件，可以预先加载，会手动修改内容的，在后面程序中实时 reload"""
-        self.latest_links = self._reload(self.config.latest_version_link_filepath)
-        self.version_data = self._reload(self.config.version_file_path)
-        # 这里应该想办法保证 retained_version 不可改变
-        self.retained_version = self._reload(self.config.retained_version_file_path)
-        version_list = self._reload(self.config.version_deque_file_path)
-        self.version_deque = {key: deque(value) for key, value in version_list.items()}
+    def reload_items(self):
+        items = self._reload(self.config.items_file_path)
+        self.db.execute("DROP TABLE IF EXISTS items_table")
+        self.db.execute(DBHandle.create_items_table_if_not)
+        for name, item in items.items():
+            url = self._get_full_url(item)
+            category_title = item.get("category_title", self.config.default_category)
+            image = item.get("image", self.config.default_image)
+            for ((platform, arch), (ori_platform, ori_arch), suffix_name) in self._get_system_archs(item):
+                formated_dl_url = f"/download/?name={name}&platform={platform}&arch={arch}"
+                self.db.execute("INSERT INTO items_table (name, category_title, website, project_name, url, sample_url, "
+                    "platform, arch, original_platform, original_arch, suffix_name, formated_dl_url, image)"
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (name, category_title, item["website"], item.get("project_name", ""), url, item.get("sample_url", ""), 
+                    platform, arch, ori_platform, ori_arch, suffix_name, formated_dl_url, image)
+                )
+        self.update_categories()
 
-        # 获取 version_data 原始数据结构的哈希值，用于判断本次是否有更新
-        self.original_hash = hash(json.dumps(self.version_data, sort_keys=True))
-
-    def save_version_deque_and(self):
-        """保存内存中的版本信息到文件中"""
-        if self.original_hash != hash(json.dumps(self.version_data, sort_keys=True)):
-            # 有更新
-            logger.info("当前已下载的最新版本信息已经改变，保存到文件中")
-            with open(self.config.version_file_path, 'w', encoding='utf-8') as f:
-                json.dump(self.version_data, f, ensure_ascii=False)
-            logger.info("DataHandle: Have saved latest version")
-
-            with open(self.config.version_deque_file_path, 'w', encoding='utf-8') as f:
-                for_save_version_deque = {key: list(value) for key, value in self.version_deque.items()}
-                json.dump(for_save_version_deque, f, ensure_ascii=False)
-            logger.info("DataHandle: Have saved version_deque ")
-            # 保存最新版下载链接
-            with open(self.config.latest_version_link_filepath, 'w', encoding='utf-8') as f:
-                json.dump(self.latest_links, f)
-        else:
-            logger.info("当前已下载的最新版本信息未发生改变")
-
-    def _make_sure_file_exist(self) -> None:
-        """有些数据文件，要确保存在，填充符合规范的样例内容，后面程序才能无须再判断"""
-        # version_file_path，记录版本的文件，就是键值对，项目名对应当前版本
-        sample_version = {"sample_project": "v0.01"}
-        self._check_file_exist(self.config.version_file_path, sample_version)
-
-        # version_deque_file_path，记录版本的文件，就是键值对，项目名对应 历史版本deque，靠前的是新的
-        sample_deque = deque()
-        sample_deque.appendleft("v0.01")
-        sample_deque.appendleft("v0.02")
-        sample_version_deque = {}
-        sample_version_deque["sample_project"] = sample_deque
-        # deque 无法保存到 JSON 中，必须先转化为 list
-        for_save_sample_version_deque = {key: list(value) for key, value in sample_version_deque.items()}
-        self._check_file_exist(self.config.version_deque_file_path, for_save_sample_version_deque)
-
-        # latest_version_link_filepath，记录最新版本的文件网址，就是键值对，项目名对应当前版本
-        sample_latest = {"naiveproxy":["http://127.0.0.1/", "http://1.1.1.1/", "http://8.8.8.8/"], "xray":["http://127.0.0.1/", "http://1.1.1.1/"]}
-        self._check_file_exist(self.config.latest_version_link_filepath, sample_latest)
-
-        # retained_version_file_path，记录要保留的版本。格式为：每个 item 的 item name 作键，要保留的版本列表作值
-        retained_version = {"sample_project": ["v0.01", "v0.02"]}
-        self._check_file_exist(self.config.retained_version_file_path, retained_version)
-
-    def _check_file_exist(self, file_path, content) -> None:
-        suffix_name = os.path.splitext(file_path)[1]
-        if not os.path.exists(file_path):
-            with open(file_path, 'w', encoding='utf-8') as f:
-                if suffix_name == '.json':
-                    json.dump(content, f)
-                elif suffix_name == '.yaml':
-                    self.yaml.dump(content, f)
-                else:
-                    raise Exception("Unknow file format")
+    def update_categories(self):
+        categories = {}
+        res = self.db.get_joined_result()
+        res.sort(key=lambda item : item[0])
+        g = groupby(res, key=lambda item : item[0])
+        for name, items in g:
+            downloads = []
+            for item in items:
+                downloads.append({
+                    "platform": item[4],
+                    "architecture": item[5],
+                    "link": item[6],
+                })
+            category_title = item[1]
+            if not categories.get(category_title):
+                categories[category_title] = []
+            # namedtuple todo
+            categories[category_title].append({
+                "name": name,
+                "category_title": category_title,
+                "website": item[2],
+                "image": item[3],
+                "downloads": downloads,
+                "version": item[7],
+                "last_modified": item[8],
+            })
+        self.categories = categories
 
     def _make_sure_file_format(self) -> None:
-        """确保数据文件的格式正确，后面程序才能无须再判断"""
+        """确保文件的格式正确"""
         pass
 
     def _reload(self, file_path):
@@ -141,15 +208,31 @@ class Data(object):
             elif suffix_name == '.json':
                 content = json.load(f)
             else:
-                raise Exception("Unknow file format")
-        
+                raise InvalidProfile("Unknow file format")
         return content
 
-    def reload_items(self) -> list[Item]:
-        items = self._reload(self.config.items_file_path)
-        for name, item in items.items():
-            item["name"] = name
-        return items
+    def _get_full_url(self, item):
+        if item["website"] == 'github':
+            return "https://github.com/" + item['project_name']
+        elif item["website"] == 'fdroid':
+            return "https://f-droid.org/packages/" + item['project_name']
+        else:
+            return self.config.default_website
 
-    def get_items(self) -> list[Item]:
-        return self._items
+    def _get_system_archs(self, item):
+        if item["website"] == 'github':
+            return [
+                ((formated_sys, formated_arch), (sys, arch), suffix_name)
+                for formated_sys, (sys, suffix_name) in item["system"].items()
+                for formated_arch, arch in item["architecture"].items()
+            ]
+        elif item["website"] == 'fdroid':
+            return [(("android", arch), ("", ori_arch), ".app") for arch, ori_arch in item["architecture"].items()]
+        elif item["website"] == 'only1link':
+            return [((one['system'], one['architecture']), (one['system'], one['architecture']), one['suffix']) for one in item["multi"]]
+        else:
+            raise InvalidItemProfile("unknow website to get_system_archs")
+
+
+if __name__ == "__main__":
+    print(DBHandle.create_dl_buf_table_if_not)
