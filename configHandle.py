@@ -40,6 +40,7 @@ class Config(object):
         self.sqlite_db_path = os.path.join(self.data_dir, "uf.db")
         # 用户配置
         self.is_production = user_configs.get("is_production", True)
+        self.max_buf_space_mb = user_configs.get("max_buf_space_mb", 1024)
         self.concurrent_amount = user_configs.get("concurrent_amount_per_website", 1)
         self.GithubAPI = user_configs.get('GitHub_Api_Token', {})
         self.default_category = user_configs.get('default_category', 'Uncategorized')

@@ -116,10 +116,10 @@ class DBHandle():
             conn.execute("UPDATE dl_buf_table SET version = ?, abs_path = ? WHERE id = ?", (version, path, id))
 
     def get_item_from(self, table_name: str, name: str, platform: str, arch: str):
+        query = f"SELECT * FROM {table_name} WHERE name=? AND platform=? AND arch=?"
         with sqlite3.connect(self.config.sqlite_db_path, isolation_level=None) as conn:
             cursor = conn.cursor()
             # 在 SQLite 中，表名和列名不能使用参数化查询的占位符（如 ?）
-            query = f"SELECT * FROM {table_name} WHERE name=? AND platform=? AND arch=?"
             cursor.execute(query, (name, platform, arch))
             return cursor.fetchone()
 
@@ -127,13 +127,20 @@ class DBHandle():
         with sqlite3.connect(self.config.sqlite_db_path, isolation_level=None) as conn:
             conn.execute("DELETE FROM dl_buf_table WHERE id=?", (id, ))
 
+    def get_oldest_item(self):
+        query = f"SELECT id, abs_path FROM dl_buf_table ORDER BY last_modified ASC LIMIT 1"
+        with sqlite3.connect(self.config.sqlite_db_path, isolation_level=None) as conn:
+            cursor = conn.cursor()
+            cursor.execute(query)
+            return cursor.fetchone()
+
 
 class Data():
     def __init__(self, config: Config) -> None:
         if not os.path.exists(config.items_file_path):   # 下载项目不存在，直接退出
             sys.exit("Warning! There is no items config file.")
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.config = config
+        self.config: Config = config
         self.yaml = ruamel.yaml.YAML()
         # 每个表有变动时刷新
         self.categories: dict[str, list[dict[str, str]]] = {}
@@ -142,7 +149,7 @@ class Data():
         self.reload_items()
         if not config.is_production:
             res = self.get_item_situation("naive_client", "windows", "amd64")
-            if res:   # 将一个版本更改，方便测试新版本更新能力
+            if res.last_modified:   # 将一个版本更改，方便测试新版本更新能力
                 self.update_item_in_db(res, "", "")
 
     def insert_item_to_db(self, *args, **kwargs):
@@ -223,6 +230,27 @@ class Data():
                 "last_modified": item[8],
             })
         self.categories = categories
+
+    def check_and_handle_max_space(self) -> None:
+        if int(self.db.get_execute_result(False, "SELECT COUNT(*) FROM dl_buf_table")[0]) <= 1:
+            return
+        if Data._get_directory_size_mb(self.config.temp_download_dir) >= self.config.max_buf_space_mb:
+            res = self.db.get_oldest_item()
+            self.db.del_item_in_buf_by_id(res[0])
+            os.remove(res[1])
+
+    @staticmethod
+    def _get_directory_size_mb(directory):
+        """计算目录下所有文件的总大小"""
+        total_size = 0
+        for root, dirs, files in os.walk(directory):
+            for file in files:
+                file_path = os.path.join(root, file)
+                try:
+                    total_size += os.path.getsize(file_path)
+                except OSError as e:
+                    print(f"无法访问文件 {file_path}: {e}")
+        return total_size / 1024 / 1024
 
     def _make_sure_file_format(self) -> None:
         """确保文件的格式正确"""

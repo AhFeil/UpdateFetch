@@ -29,6 +29,7 @@ class AllocateDownloader:
             if fp and ver:
                 self.logger.info(f"there is a new version for {item.name}")
                 self.data.update_item_in_db(item, ver, fp)
+                self.data.check_and_handle_max_space()
             else:   # 有新版本但出错，会抛出异常；无更新或出错返回都为空
                 pass
 
