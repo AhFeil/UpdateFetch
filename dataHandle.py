@@ -189,6 +189,12 @@ class Data():
 
     def reload_items(self):
         items = self._reload(self.config.items_file_path)
+        if self.config.example_items != self.config.items_file_path:
+            example_items = self._reload(self.config.example_items)
+            for name in example_items:
+                if name not in items:
+                    items[name] = example_items[name]
+
         self.db.execute("DROP TABLE IF EXISTS items_table")
         self.db.execute(DBHandle.create_items_table_if_not)
         for name, item in items.items():
@@ -256,7 +262,7 @@ class Data():
         """确保文件的格式正确"""
         pass
 
-    def _reload(self, file_path):
+    def _reload(self, file_path, default={}):
         """方便重载某个配置文件"""
         suffix_name = os.path.splitext(file_path)[1]   # 获取后缀名
         with open(file_path, 'r', encoding='utf-8') as f:
@@ -266,7 +272,7 @@ class Data():
                 content = json.load(f)
             else:
                 raise InvalidProfile("Unknow file format")
-        return content
+        return content if content else default
 
     def _get_homepage(self, item):
         if item["website"] == "github":

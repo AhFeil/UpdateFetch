@@ -19,7 +19,7 @@ then
     mkdir config_and_data_files && \
     cp examples/config.yaml config_and_data_files/config.yaml && \
     cp examples/pgm_config.yaml config_and_data_files/pgm_config.yaml && \
-    cp examples/items.yaml config_and_data_files/items.yaml
+    touch config_and_data_files/items.yaml
 fi
 mkdir -p temp_download
 

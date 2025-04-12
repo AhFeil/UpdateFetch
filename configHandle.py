@@ -10,6 +10,7 @@ class Config(object):
     def __init__(self, configs_path: tuple[str]) -> None:
         self.yaml = YAML()
         self.configs_path = configs_path
+        self.example_items = os.path.abspath("examples/items.yaml")
         self.reload()
 
     def _load_config(self) -> Generator[dict, Any, Any]:
