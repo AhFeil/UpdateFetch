@@ -85,15 +85,19 @@ FDroid 目前遇到了 3 种形式：
 
 > Emby 在 GitHub 的下载，是在项目仓库中放着，下载链接是固定的，并且没法判断版本
 
+和 GitHub release 一样，只是 project_name 是主页网址，sample_url 就是最终的网址，这样相当于其下指定的平台架构有同一个网址。
+
 ```yaml
 emby_for_android:
+  category: Mobile
+  image: https://ib.ahfei.blog/imagesbed/favicon-emby.png
   website: only1link
-  multi:
-    # 一个下载链接，对应一套系统、架构、后缀名
-    - downlink: https://github.com/MediaBrowser/Emby.Releases/raw/master/android/emby-android-google-arm64-v8a-release.apk
-      system: android
-      suffix: .apk
-      architecture: arm64
+  project_name: https://github.com/MediaBrowser/Emby.Releases
+  sample_url: https://github.com/MediaBrowser/Emby.Releases/raw/master/android/emby-android-google-arm64-v8a-release.apk
+  system:
+    android: [android, .apk]
+  architecture:
+    arm64: arm64
 ```
 
 

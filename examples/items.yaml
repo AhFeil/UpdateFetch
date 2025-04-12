@@ -294,8 +294,9 @@ emby_for_android:
   category: Mobile
   image: https://ib.ahfei.blog/imagesbed/favicon-emby.png
   website: only1link
-  multi:
-    - downlink: https://github.com/MediaBrowser/Emby.Releases/raw/master/android/emby-android-google-arm64-v8a-release.apk
-      system: android
-      suffix: .apk
-      architecture: arm64
+  project_name: https://github.com/MediaBrowser/Emby.Releases
+  sample_url: https://github.com/MediaBrowser/Emby.Releases/raw/master/android/emby-android-google-arm64-v8a-release.apk
+  system:
+    android: [android, .apk]
+  architecture:
+    arm64: arm64

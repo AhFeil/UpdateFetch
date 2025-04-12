@@ -192,7 +192,7 @@ class Data():
         self.db.execute("DROP TABLE IF EXISTS items_table")
         self.db.execute(DBHandle.create_items_table_if_not)
         for name, item in items.items():
-            homepage = self._get_full_url(item)
+            homepage = self._get_homepage(item)
             category = item.get("category", self.config.default_category)
             image = item.get("image", self.config.default_image)
             for ((platform, arch), (ori_platform, ori_arch), suffix_name) in self._get_system_archs(item):
@@ -268,27 +268,25 @@ class Data():
                 raise InvalidProfile("Unknow file format")
         return content
 
-    def _get_full_url(self, item):
-        if item["website"] == 'github':
+    def _get_homepage(self, item):
+        if item["website"] == "github":
             return "https://github.com/" + item['project_name']
-        elif item["website"] == 'fdroid':
+        if item["website"] == "fdroid":
             return "https://f-droid.org/packages/" + item['project_name'] + '/'
-        else:
-            return self.config.default_website
+        if item["website"] == "only1link":
+            return item['project_name']
+        return self.config.default_website
 
     def _get_system_archs(self, item):
-        if item["website"] == 'github':
+        if item["website"] in ["github", "only1link"]:
             return [
                 ((formated_sys, formated_arch), (sys, arch), suffix_name)
                 for formated_sys, (sys, suffix_name) in item["system"].items()
                 for formated_arch, arch in item["architecture"].items()
             ]
-        elif item["website"] == 'fdroid':
+        if item["website"] == "fdroid":
             return [(("android", arch), ("", ori_arch), ".apk") for arch, ori_arch in item["architecture"].items()]
-        elif item["website"] == 'only1link':
-            return [((one['system'], one['architecture']), (one['system'], one['architecture']), one['suffix']) for one in item["multi"]]
-        else:
-            raise InvalidItemProfile("unknow website to get_system_archs")
+        raise InvalidItemProfile("unknow website to get_system_archs")
 
 
 if __name__ == "__main__":
