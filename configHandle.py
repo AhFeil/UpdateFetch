@@ -13,7 +13,7 @@ class Config(object):
         self.reload()
 
     def _load_config(self) -> Generator[dict, Any, Any]:
-        """定义如何加载配置文件"""
+        """加载配置文件"""
         for f in self.configs_path:
             try:
                 with open(f, "r", encoding='utf-8') as fp:

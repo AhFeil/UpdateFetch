@@ -3,6 +3,9 @@ import os
 import httpx
 import aiofiles
 from abc import ABC, abstractmethod
+
+import jinja2
+
 from dataHandle import ItemInfo
 
 class APILimitException(Exception):
@@ -12,6 +15,8 @@ class APILimitException(Exception):
 
 class AbstractDownloader(ABC):
     """描述下载所有网站都需要的内容，单个实例可以并发下不同的下载项"""
+    environment = jinja2.Environment()
+
     def __init__(self, download_dir, api_token=None):
         self.download_dir = download_dir
         self.api_token = api_token
@@ -36,6 +41,11 @@ class AbstractDownloader(ABC):
     def format_url(cls, item_info: ItemInfo, latest_version):
         """得到下载直链"""
         raise NotImplementedError
+
+    @staticmethod
+    def _format_url(example_url: str, kargs: dict) -> str:
+        template = AbstractDownloader.environment.from_string(example_url)
+        return template.render(kargs)
 
     @staticmethod
     async def _is_valid_code(url: str, valid_codes: list) -> bool:
@@ -71,7 +81,6 @@ class AbstractDownloader(ABC):
             resp = await client.get(url)
             try:
                 resp.raise_for_status()  # 确保请求成功
-                logger.info(f"finish to download '{filename}'")
                 async with aiofiles.open(filepath, 'wb') as f:
                     await f.write(resp.content)
                 logger.info(f"finish to save '{filename}'")

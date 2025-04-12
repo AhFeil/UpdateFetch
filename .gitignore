@@ -2,6 +2,7 @@
 config_and_data_files/
 temp_download/
 dev_cheat.md
+updatefetch.service
 
 # ---> Python
 # Byte-compiled / optimized / DLL files

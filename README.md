@@ -5,14 +5,14 @@
 
 UpdateFetch 代理下载文件，方便在特殊网络环境中分享、下载软件。能够下载的项目依赖于用户的配置，目前提供 GitHub、F-Droid 平台的下载器。
 
-在网页显示支持下载的软件，方便使用： [UpdateFetch](http://uf.cufah.cloud/)
+在网页显示支持下载的软件，方便使用： [UpdateFetch](http://updatefetch.vfly2.eu.org/)
 
 
 ## 使用
 
 在网页上复制某个软件的下载链接，通过此链接总是下载该软件指定平台和架构的最新版本。
 
-下载链接的格式为：`http://uf.cufah.cloud/download/?name=xray&platform=linux&arch=amd64`，通过三元组（名称、平台、架构）确定要下载的文件。
+下载链接的格式为：`http://updatefetch.vfly2.eu.org/download/?name=xray&platform=linux&arch=amd64`，通过三元组（名称、平台、架构）确定要下载的文件。
 
 
 
