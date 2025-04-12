@@ -272,7 +272,7 @@ class Data():
         if item["website"] == 'github':
             return "https://github.com/" + item['project_name']
         elif item["website"] == 'fdroid':
-            return "https://f-droid.org/packages/" + item['project_name']
+            return "https://f-droid.org/packages/" + item['project_name'] + '/'
         else:
             return self.config.default_website
 
@@ -284,7 +284,7 @@ class Data():
                 for formated_arch, arch in item["architecture"].items()
             ]
         elif item["website"] == 'fdroid':
-            return [(("android", arch), ("", ori_arch), ".app") for arch, ori_arch in item["architecture"].items()]
+            return [(("android", arch), ("", ori_arch), ".apk") for arch, ori_arch in item["architecture"].items()]
         elif item["website"] == 'only1link':
             return [((one['system'], one['architecture']), (one['system'], one['architecture']), one['suffix']) for one in item["multi"]]
         else:

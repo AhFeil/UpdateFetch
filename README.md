@@ -70,27 +70,15 @@ tag 切片。如果 GitHub 某项目的 tag 是这种 desktop-v2023.12.1，但�
 schildchat:
   website: fdroid
   project_name: de.spiritcroc.riotx   # 这个到软件在 FDroid 网站的页面，其网址最后一部分就是
-  # 因为 FDroid 上都是 Android 平台的 APP，因此不必填写系统
   architecture:
     arm64: arm64-v8a
+  # 因为 FDroid 上都是 Android 平台的 APP，因此不必填写系统
 ```
 
 FDroid 目前遇到了 3 种形式：
-1. 第一种是上面的，不同架构的下载地址不一样（架构名是固定的 x86_64, x86, arm64-v8a, armabi-v7a），每个版本有 4 个下载链接。例子： https://f-droid.org/en/packages/de.spiritcroc.riotx/
-2. 第二种是四种架构合一的，每个版本只有 1 个下载链接，应该在所有架构都通用。例子： https://f-droid.org/en/packages/com.osfans.trime/ ，这种加上 4in1: true 即可，architecture 依然填写
+1. 第一种是四种架构的下载地址不一样（架构名是固定的 x86_64, x86, arm64-v8a, armabi-v7a），例子： https://f-droid.org/en/packages/de.spiritcroc.riotx/
+2. 第二种是四种架构合一的，每个版本只有 1 个下载链接，在所有架构都通用，例子： https://f-droid.org/en/packages/com.osfans.trime/
 3. 不显示架构的，每个版本只有 1 个下载链接，例子： https://f-droid.org/en/packages/org.fox.tttrss/ ，暂时不支持
-
-四种架构合一
-
-```yaml
-trime:
-  website: fdroid
-  project_name: com.osfans.trime
-  4in1: true
-  architecture:
-    arm64: arm64-v8a
-```
-
 
 
 #### 单一个下载链接

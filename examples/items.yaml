@@ -254,19 +254,18 @@ tiny-rdm:
     arm64: arm64
 
 # F-Droid
-trime:   # 四种架构合一的，加上 4in1: true 即可，架构保持即可
+trime:
   category: Mobile
   image: https://ib.ahfei.blog:443/imagesbed/Trime-logo-24-02-58.png
   website: fdroid
   project_name: com.osfans.trime
-  4in1: true
   architecture:
     arm64: arm64-v8a
+    arm32: armeabi-v7a
 nextcloud:
   category: Mobile
   website: fdroid
   project_name: com.nextcloud.client
-  4in1: true
   architecture:
     arm64: arm64-v8a
 fcitx5_android:

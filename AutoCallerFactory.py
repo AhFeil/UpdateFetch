@@ -1,6 +1,6 @@
 import logging
 
-from downloader import APILimitException, downloader_classes
+from downloader import APILimitException, NotFound, downloader_classes
 from dataHandle import ItemInfo, Data
 
 
@@ -22,8 +22,10 @@ class AllocateDownloader:
 
         try:
             fp, ver = await instance(item)
+        except NotFound:
+            self.logger.warning("Unable to find the corresponding resource based on the provided information")
         except APILimitException:
-            self.logger.warning("-----API rate limit exceeded for machine IP-----")
+            self.logger.warning("API rate limit exceeded for machine IP")
         else:
             # 有新版本或第一次下载，会返回新文件路径和版本
             if fp and ver:

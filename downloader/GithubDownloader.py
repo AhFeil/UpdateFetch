@@ -1,5 +1,4 @@
 import json
-import re
 import httpx
 
 from downloader.AbstractClass import APILimitException, AbstractDownloader
@@ -41,5 +40,5 @@ class GithubDownloader(AbstractDownloader):
         return await AbstractDownloader._is_valid_code(url, valid_codes)
 
     @classmethod
-    def is_out_of_date(cls, latest_version: str, cur: str) -> bool:
+    def _is_out_of_date(cls, latest_version: str, cur: str) -> bool:
         return cur != latest_version

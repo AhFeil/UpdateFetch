@@ -8,6 +8,10 @@ import jinja2
 
 from dataHandle import ItemInfo
 
+class NotFound(Exception):
+    """未能根据传入的信息找到相应的资源"""
+    pass
+
 class APILimitException(Exception):
     """GitHub 网页请求限制"""
     pass
@@ -64,7 +68,7 @@ class AbstractDownloader(ABC):
 
     @classmethod
     @abstractmethod
-    def is_out_of_date(cls, latest_version: str, cur: str) -> bool:
+    def _is_out_of_date(cls, latest_version: str, cur: str) -> bool:
         """检查是否落后新版本"""
         raise NotImplementedError
 
