@@ -29,9 +29,10 @@ class Item(TypedDict):
     version: str
     last_modified: datetime
 
+# 在程序全流程中传递的一条下载项内容
 ItemInfo = namedtuple(
     "ItemInfo",
-    ["name", "image", "category", "website", "project_name", "homepage", "sample_url", "platform", "arch", "original_platform", "original_arch", "suffix_name", "formated_dl_url", "version", "last_modified", "buf_id"]
+    ["name", "image", "category", "website", "project_name", "homepage", "sample_url", "platform", "arch", "original_platform", "original_arch", "suffix_name", "formated_dl_url", "staleDurationDay", "version", "last_modified", "buf_id"]
 )
 
 class InvalidProfile(Exception):
@@ -68,7 +69,8 @@ class DBHandle():
             original_platform TEXT,
             original_arch TEXT,
             suffix_name TEXT,
-            formated_dl_url TEXT)"""
+            formated_dl_url TEXT,
+            stale_duration INTEGER)"""
     )
 
     get_web_elements = textwrap.dedent("""\
@@ -82,7 +84,7 @@ class DBHandle():
 
     get_item_situation = textwrap.dedent("""\
         SELECT
-            dl_buf_table.id, items_table.name, website, project_name, sample_url, items_table.platform, items_table.arch, original_platform, original_arch, suffix_name, version, last_modified
+            dl_buf_table.id, items_table.name, website, project_name, sample_url, items_table.platform, items_table.arch, original_platform, original_arch, suffix_name, version, last_modified, stale_duration
         FROM
             items_table
         INNER JOIN dl_buf_table
@@ -147,10 +149,6 @@ class Data():
         self.db = DBHandle(config)
         self.db.execute(DBHandle.create_dl_buf_table_if_not)
         self.reload_items()
-        if not config.is_production:
-            res = self.get_item_situation("naive_client", "windows", "amd64")
-            if res.last_modified:   # 将一个版本更改，方便测试新版本更新能力
-                self.update_item_in_db(res, "", "")
 
     def insert_item_to_db(self, *args, **kwargs):
         self.db.insert_item_to_buf(*args, **kwargs)
@@ -177,15 +175,16 @@ class Data():
         self.update_categories()
         return ""
 
-    def get_item_info(self, name, platform, arch):
+    def _get_item_info(self, name, platform, arch):
         res = self.db.get_item_from("items_table", name, platform, arch)
         return ItemInfo(*res[1:], None, None, None)
 
     def get_item_situation(self, name, platform, arch):
         res = self.db.get_execute_result(False, DBHandle.get_item_situation, (name, platform, arch))
         if res:
-            return ItemInfo(name=res[1], image=None, category=None, website=res[2], project_name=res[3], homepage=None, sample_url=res[4], platform=res[5], arch=res[6], original_platform=res[7], original_arch=res[8], suffix_name=res[9], formated_dl_url=None, version=res[10], last_modified=res[11], buf_id=res[0])
-        return self.get_item_info(name, platform, arch)
+            datetime_obj = datetime.strptime(res[11], "%Y-%m-%d %H:%M:%S")
+            return ItemInfo(name=res[1], image=None, category=None, website=res[2], project_name=res[3], homepage=None, sample_url=res[4], platform=res[5], arch=res[6], original_platform=res[7], original_arch=res[8], suffix_name=res[9], formated_dl_url=None, staleDurationDay=res[12], version=res[10], last_modified=datetime_obj, buf_id=res[0])
+        return self._get_item_info(name, platform, arch)
 
     def reload_items(self):
         items = self._reload(self.config.items_file_path)
@@ -204,10 +203,10 @@ class Data():
             for ((platform, arch), (ori_platform, ori_arch), suffix_name) in self._get_system_archs(item):
                 formated_dl_url = f"/download/?name={name}&platform={platform}&arch={arch}"
                 self.db.execute("INSERT INTO items_table (name, image, category, website, project_name, homepage, sample_url, "
-                    "platform, arch, original_platform, original_arch, suffix_name, formated_dl_url)"
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    "platform, arch, original_platform, original_arch, suffix_name, formated_dl_url, stale_duration)"
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     (name, image, category, item["website"], item.get("project_name", ""), homepage, item.get("sample_url", ""), 
-                    platform, arch, ori_platform, ori_arch, suffix_name, formated_dl_url)
+                    platform, arch, ori_platform, ori_arch, suffix_name, formated_dl_url, item.get("staleDurationDay", 1))
                 )
         self.update_categories()
 

@@ -13,6 +13,7 @@ naive_client:
   architecture:
     arm64: arm64
     amd64: x64
+  staleDurationDay: 10
 xray:
   category: Server
   image: https://ib.ahfei.blog/imagesbed/xray_logo_cpd-24-01-03.webp

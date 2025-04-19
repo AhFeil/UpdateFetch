@@ -29,6 +29,8 @@ class AbstractDownloader(ABC):
     async def __call__(self, item_info: ItemInfo):
         """调用以上命令，串联工作流程，出错则返回空字符串 filepath"""
         latest_version = await self.__class__.get_latest_version(item_info, self.api_token)
+        if not self.__class__._is_out_of_date(latest_version, item_info.version):
+            return "", ""
         filename = f"{item_info.name}-{item_info.platform}-{item_info.arch}-{latest_version.replace(r'%2F', '-')}{item_info.suffix_name}"
         url = self.__class__.format_url(item_info, latest_version)
         filepath = await AbstractDownloader.downloading(self.logger, url, filename, self.download_dir, self.__class__.is_valid_url)

@@ -1,3 +1,5 @@
+import math
+from datetime import datetime
 import logging
 
 from downloader import APILimitException, NotFound, downloader_classes
@@ -13,7 +15,17 @@ class AllocateDownloader:
         self.data = data
         self.download_dir = download_dir
 
-    async def call_instance(self, item: ItemInfo):
+    async def get_file(self, item_info: ItemInfo):
+        filepath = self.data.get_and_check_path_from_db(item_info.name, item_info.platform, item_info.arch)
+        if item_info.last_modified and AllocateDownloader.ceil_days_diff(datetime.now(), item_info.last_modified) > item_info.staleDurationDay:
+            self.logger.info(f"need check new version for '{item_info.name}'.")
+            filepath = ""
+        if filepath:
+            return filepath
+        await self._call_instance(item_info)
+        return self.data.get_and_check_path_from_db(item_info.name, item_info.platform, item_info.arch)
+
+    async def _call_instance(self, item: ItemInfo):
         cls = downloader_classes.get(item.website)
         if not cls:
             self.logger.warning(f"No instance found with downloader_name '{item.website}'.")
@@ -35,9 +47,9 @@ class AllocateDownloader:
             else:   # 有新版本但出错，会抛出异常；无更新或出错返回都为空
                 pass
 
-    async def get_file(self, item_info: ItemInfo):
-        filepath = self.data.get_and_check_path_from_db(item_info.name, item_info.platform, item_info.arch)
-        if filepath:
-            return filepath
-        await self.call_instance(item_info)
-        return self.data.get_and_check_path_from_db(item_info.name, item_info.platform, item_info.arch)
+    @staticmethod
+    def ceil_days_diff(dt1: datetime, dt2: datetime):
+        delta = dt1 - dt2
+        total_seconds = abs(delta.total_seconds())
+        days = total_seconds / 86400  # 86400秒 = 1天
+        return math.ceil(days)

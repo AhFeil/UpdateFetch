@@ -43,6 +43,7 @@ xray:   # 软件名，作为三元组中的名称
   architecture:   # 软件要下载哪些架构的，左边是用于重命名的标准名称，右边是 sample_url 中应该实际填写的
     arm64: arm64-v8a
     amd64: '64'
+  staleDurationDay: 1   # 资源保持旧版本不检查的时长，可省略
 ```
 
 最终，下载器会组合出 4 个下载链接，并下载，假设查到的最新版是 v1.8.7， 4 个网址分别是
@@ -189,6 +190,7 @@ sequenceDiagram
 
     AutoCaller->>Data: 查询缓存里文件路径
     Data->>AutoCaller: 返回路径
+    AutoCaller->>AutoCaller: 检查缓存过期时间<br>失效则置路径为空
     alt 路径不为空
         AutoCaller->>FastAPI: 返回路径
         FastAPI->>User: 返回文件
