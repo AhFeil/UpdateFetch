@@ -3,9 +3,9 @@
 
 # UpdateFetch
 
-UpdateFetch 代理下载文件，方便在特殊网络环境中分享、下载软件。能够下载的项目依赖于用户的配置，目前提供 GitHub、F-Droid 平台的下载器。
+UpdateFetch 代理下载文件，方便在受限网络环境中分享、下载软件。能够下载的项目依赖于用户的配置，目前提供 GitHub、F-Droid 平台的下载器。
 
-在网页显示支持下载的软件，方便使用： [UpdateFetch](http://updatefetch.vfly2.eu.org/)
+体验网页： [UpdateFetch](http://updatefetch.vfly2.eu.org/)
 
 
 ## 使用
@@ -28,15 +28,13 @@ UpdateFetch 代理下载文件，方便在特殊网络环境中分享、下载�
 
 > 本项目最初参考的是：在 Linux 上，下载 GitHub 平台软件最新版的 shell 脚本，因此 GitHub 下载器的思路是一样的：组装下载地址
 
-以 xray 为例
-
 ```yaml
 xray:   # 软件名，作为三元组中的名称
   category_title: Server   # 在网页上的分类，可省略
   image: https://ib.ahfei.blog/imagesbed/xray_logo_cpd-24-01-03.webp   # 在网页上的图片，可省略
   website: github   # 用哪个下载器
   project_name: XTLS/Xray-core   # 项目名称
-  sample_url: ~/${tag}/Xray-${system}-${ARCHITECTURE}${suffix_name}   # release 中的下载链接，${} 包裹的在下载时会被替换成实际值
+  sample_url: ~/{{ tag }}/Xray-{{ system }}-{{ arch }}{{ suffix_name }}   # release 中的下载链接，{{  }} 包裹的在下载时会被替换成实际值
   system:   # 软件要下载哪些系统的，左边是用于重命名的标准名称，右边的列表里，左项是 sample_url 中应该实际填写的，右边是对应的后缀名
     windows: [windows, .zip]
     linux: [linux, .zip]
@@ -46,7 +44,7 @@ xray:   # 软件名，作为三元组中的名称
   staleDurationDay: 1   # 资源保持旧版本不检查的时长，可省略
 ```
 
-最终，下载器会组合出 4 个下载链接，并下载，假设查到的最新版是 v1.8.7， 4 个网址分别是
+最终，程序能根据配置组合出 4 个下载链接，并跟实际的软件名、平台、架构建立对应关系。假设查到的最新版是 v1.8.7， 4 个网址分别是
 
 ```
 https://github.com/XTLS/Xray-core/releases/download/v1.8.7/Xray-windows-arm64-v8a.zip
@@ -59,11 +57,7 @@ https://github.com/XTLS/Xray-core/releases/download/v1.8.7/Xray-linux-64.zip
 
 ---
 
-tag 切片。如果 GitHub 某项目的 tag 是这种 desktop-v2023.12.1，但实际文件名要的是 2023.12.1，可以使用切片取 tag 的一部分。
-
-第一个字符的索引取 0，不支持 `[9:]` 这种写法，而是 `[9:18]` 不能有空的，两边都要有数字，不检查是否合法。由于左闭右开，要填 18，而不是 17。最终是 `${tag[9:18]}`
-
-
+tag 切片。如从 `v1.8.7` 取出 `1.8.7`，使用 `{{ tag[1:] }}`，语法和 Python 的切片规则一样。
 
 #### FDroid
 
@@ -86,7 +80,7 @@ FDroid 目前遇到了 3 种形式：
 
 > Emby 在 GitHub 的下载，是在项目仓库中放着，下载链接是固定的，并且没法判断版本
 
-和 GitHub release 一样，只是 project_name 是主页网址，sample_url 就是最终的网址，这样相当于其下指定的平台架构有同一个网址。
+和 GitHub release 一样，只是 project_name 是主页网址，sample_url 就是最终的下载网址，这样相当于其下指定的平台架构有同一个网址。
 
 ```yaml
 emby_for_android:
@@ -115,7 +109,7 @@ emby_for_android:
 
 缓存：
 - [x] 总缓存空间大小限制，要超出时，按一定规则删除一些；当缓存中只有一个文件时，这个文件的大小可以超出缓存
-- [ ] 每个下载项可以定义一个缓存失效时间，在有效期内，不检查新版本，始终返回缓存中的文件；超出有效期则检查新版本，若有则更新
+- [x] 每个下载项可以定义一个缓存失效时间，在有效期内，不检查新版本，始终返回缓存中的文件；超出有效期则检查新版本，若有则更新
 
 网页：
 - [ ] 首页显示配置里每一项的元信息和对应规范后的下载链接，每个分类单独一个按钮，点击就刷新为对应内容
