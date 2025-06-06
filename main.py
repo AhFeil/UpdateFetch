@@ -1,8 +1,10 @@
 import os
+from typing import Annotated, Literal, Optional
 
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request, Query, HTTPException
 from fastapi.responses import HTMLResponse, FileResponse, PlainTextResponse
 from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
 
 import preprocess
 from AutoCallerFactory import AllocateDownloader
@@ -16,9 +18,14 @@ async def root(request: Request):
     context = {"categories": preprocess.data.categories}
     return templates.TemplateResponse(request=request, name="index.html", context=context)
 
+class FilterParams(BaseModel):
+    name: str
+    platform: Optional[Literal["android", "windows", "linux"]] = "linux"
+    arch: Optional[Literal["arm64", "amd64"]] = "amd64"
+
 @app.get("/download/")
-async def download(name: str, platform: str, arch: str):
-    situation = preprocess.data.get_item_situation(name, platform, arch)
+async def download(params: Annotated[FilterParams, Query()]):
+    situation = preprocess.data.get_item_situation(params.name, params.platform, params.arch)
     if not situation:
         raise HTTPException(status_code=404, detail="Resource not found")
     fp = await allocate_downloader.get_file(situation)
