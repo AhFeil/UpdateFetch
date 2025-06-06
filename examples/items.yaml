@@ -255,6 +255,12 @@ tiny-rdm:
     arm64: arm64
 
 # F-Droid
+F-Droid:
+  category: Mobile
+  website: fdroid
+  project_name: org.fdroid.fdroid
+  architecture:
+    arm64: arm64-v8a
 trime:
   category: Mobile
   image: https://ib.ahfei.blog:443/imagesbed/Trime-logo-24-02-58.png
