@@ -5,7 +5,7 @@
 
 UpdateFetch 代理下载文件，方便在受限网络环境中分享、下载软件。能够下载的项目依赖于用户的配置，目前提供 GitHub、F-Droid 平台的下载器。
 
-体验网页： [UpdateFetch](http://updatefetch.vfly2.eu.org/)
+体验网页： [UpdateFetch](http://updatefetch.vfly2.eu.org:8679/)
 
 
 ## 使用
