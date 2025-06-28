@@ -1,4 +1,6 @@
 import os
+from pathlib import Path
+from enum import Enum
 from typing import Annotated, Literal, Optional
 
 from fastapi import FastAPI, Request, Query, HTTPException
@@ -39,18 +41,19 @@ async def favicon():
     return FileResponse(path=fp, filename=os.path.basename(fp))
 
 
-from enum import Enum
 
 class AdditionalPage(Enum):
     robots = "robots.txt"
     sitemap = "sitemap.xml"
 
-# 缓存 todo
+additional_pages = {
+    item.value: Path(f"templates/{item.value}").read_text(encoding="utf-8")
+    for item in AdditionalPage
+}
+
 @app.get("/{file}", response_class=PlainTextResponse)
 async def static_from_root(file: AdditionalPage):
-    with open(os.path.join("templates", file.value), 'r', encoding="utf-8") as f:
-        content = f.read()
-    return content
+    return additional_pages[file.value]
 
 
 if __name__ == '__main__':
