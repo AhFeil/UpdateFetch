@@ -4,6 +4,7 @@ import logging
 
 from downloader import APILimitException, NotFound, downloader_classes
 from dataHandle import ItemInfo, Data
+from configHandle import post2RSS
 
 
 class AllocateDownloader:
@@ -38,6 +39,9 @@ class AllocateDownloader:
             self.logger.warning("Unable to find the corresponding resource based on the provided information")
         except APILimitException:
             self.logger.warning("API rate limit exceeded for machine IP")
+        except Exception as e:
+            await post2RSS("error log of AllocateDownloader", str(e))
+            raise
         else:
             # 有新版本或第一次下载，会返回新文件路径和版本
             if fp and ver:

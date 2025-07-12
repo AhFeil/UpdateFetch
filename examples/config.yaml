@@ -12,3 +12,10 @@ concurrent_amount_per_website: 3   # 下载同一 website 的下载项的并发�
 default_category: Uncategorized
 default_image: https://ib.ahfei.blog/imagesbed/picture_has_been_chewed_up_by_cat_vfly2.webp
 default_website: https://github.com/AhFeil/updatefetch
+
+post2RSS:
+  ip_or_domain: rss.vfly2.com
+  port: 80
+  username: xxx
+  password: xxx
+  source_name: uf_severe_log

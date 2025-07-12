@@ -84,7 +84,7 @@ class DBHandle():
 
     get_item_situation = textwrap.dedent("""\
         SELECT
-            dl_buf_table.id, items_table.name, website, project_name, sample_url, items_table.platform, items_table.arch, original_platform, original_arch, suffix_name, version, last_modified, stale_duration
+            dl_buf_table.id, items_table.name, website, project_name, sample_url, items_table.platform, items_table.arch, original_platform, original_arch, suffix_name, version, last_modified, stale_duration, homepage
         FROM
             items_table
         INNER JOIN dl_buf_table
@@ -183,7 +183,7 @@ class Data():
         res = self.db.get_execute_result(False, DBHandle.get_item_situation, (name, platform, arch))
         if res:
             datetime_obj = datetime.strptime(res[11], "%Y-%m-%d %H:%M:%S")
-            return ItemInfo(name=res[1], image=None, category=None, website=res[2], project_name=res[3], homepage=None, sample_url=res[4], platform=res[5], arch=res[6], original_platform=res[7], original_arch=res[8], suffix_name=res[9], formated_dl_url=None, staleDurationDay=res[12], version=res[10], last_modified=datetime_obj, buf_id=res[0])
+            return ItemInfo(name=res[1], image=None, category=None, website=res[2], project_name=res[3], homepage=res[13], sample_url=res[4], platform=res[5], arch=res[6], original_platform=res[7], original_arch=res[8], suffix_name=res[9], formated_dl_url=None, staleDurationDay=res[12], version=res[10], last_modified=datetime_obj, buf_id=res[0])
         return self._get_item_info(name, platform, arch)
 
     def reload_items(self):

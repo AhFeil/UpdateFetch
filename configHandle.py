@@ -1,9 +1,17 @@
+import base64
 import sys
 import os
 import logging.config
+from datetime import datetime
 from typing import Generator, Any
 
 from ruamel.yaml import YAML, YAMLError
+import httpx
+
+
+configfile = os.getenv("UPDATEFETCH_CONFIG_FILE", default='config_and_data_files/config.yaml')
+pgm_configfile = os.getenv("UPDATEFETCH_PGM_CONFIG_FILE", default='config_and_data_files/pgm_config.yaml')
+absolute_configfiles = map(lambda x:os.path.abspath(x), (configfile, pgm_configfile))
 
 
 class Config(object):
@@ -49,3 +57,41 @@ class Config(object):
         self.default_category = user_configs.get('default_category', 'Uncategorized')
         self.default_image = user_configs.get('default_image', "https://ib.ahfei.blog/imagesbed/picture_has_been_chewed_up_by_cat_vfly2.webp")
         self.default_website = user_configs.get('default_website', "/")
+        # post2RSS 相关信息
+        post2RSS = user_configs.get("post2RSS")
+        if post2RSS and post2RSS["username"] != post2RSS["password"]: # 后面的不等判断是为了使用默认配置时忽略 post2RSS
+            self.post2RSS_url = f"http://{post2RSS['ip_or_domain']}:{post2RSS['port']}/post_src/{post2RSS['source_name']}/"
+            self.src_url = f"http://rss.vfly2.com/query_rss/{post2RSS['source_name']}.xml/#"
+            credentials = f"{post2RSS['username']}:{post2RSS['password']}"
+            encoded_credentials = base64.b64encode(credentials.encode('utf-8')).decode('utf-8')
+            self.post2RSS_headers = {
+                "accept": "application/json",
+                "Content-Type": "application/json",
+                "Authorization": f"Basic {encoded_credentials}"
+            }
+        else:
+            self.post2RSS_url = ""
+
+
+config = Config(absolute_configfiles)
+
+logger = logging.getLogger("post2RSS")
+
+async def post2RSS(title: str, summary: str) -> httpx.Response | None:
+    """不引发异常"""
+    if config.post2RSS_url:
+        timeout = httpx.Timeout(10.0, read=10.0)
+        data_raw = [{
+                "title": title,
+                "link": config.src_url + str(datetime.now().timestamp()),
+                "summary": summary,
+                "content": summary,
+                "pub_time": datetime.now().timestamp()
+            }]
+        async with httpx.AsyncClient() as client:
+            try:
+                response = await client.post(url=config.post2RSS_url, headers=config.post2RSS_headers, json=data_raw, timeout=timeout)
+            except Exception as e:
+                logger.warning(f"exception of post2RSS: {e}")
+            else:
+                return response
