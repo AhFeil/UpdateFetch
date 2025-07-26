@@ -10,6 +10,7 @@ from pydantic import BaseModel
 
 import preprocess
 from AutoCallerFactory import AllocateDownloader
+from dataHandle import ItemLocation
 
 app = FastAPI()
 templates = Jinja2Templates(directory='templates')
@@ -20,14 +21,19 @@ async def root(request: Request):
     context = {"categories": preprocess.data.categories}
     return templates.TemplateResponse(request=request, name="index.html", context=context)
 
-class FilterParams(BaseModel):
+
+class ItemLocationFilter(BaseModel):
     name: str
     platform: Optional[Literal["android", "windows", "linux"]] = "linux"
     arch: Optional[Literal["arm64", "amd64"]] = "amd64"
 
+    def to_item_location(self) -> ItemLocation:
+        return ItemLocation(self.name, self.platform, self.arch)
+
+
 @app.get("/download/")
-async def download(params: Annotated[FilterParams, Query()]):
-    situation = preprocess.data.get_item_situation(params.name, params.platform, params.arch)
+async def download(params: Annotated[ItemLocationFilter, Query()]):
+    situation = preprocess.data.get_item_situation(params.to_item_location())
     if not situation:
         raise HTTPException(status_code=404, detail="Resource not found")
     fp = await allocate_downloader.get_file(situation)

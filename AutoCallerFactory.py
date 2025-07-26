@@ -3,7 +3,7 @@ from datetime import datetime
 import logging
 
 from downloader import APILimitException, NotFound, downloader_classes
-from dataHandle import ItemInfo, Data
+from dataHandle import ItemInfo, ItemLocation, Data
 from configHandle import post2RSS
 
 
@@ -17,14 +17,15 @@ class AllocateDownloader:
         self.download_dir = download_dir
 
     async def get_file(self, item_info: ItemInfo):
-        filepath = self.data.get_and_check_path_from_db(item_info.name, item_info.platform, item_info.arch)
+        item_location = ItemLocation(item_info.name, item_info.platform, item_info.arch)
+        filepath = self.data.get_and_check_path_from_db(item_location)
         if item_info.last_modified and AllocateDownloader.ceil_days_diff(datetime.now(), item_info.last_modified) > item_info.staleDurationDay:
             self.logger.info(f"need check new version for '{item_info.name}'.")
             filepath = ""
         if filepath:
             return filepath
         await self._call_instance(item_info)
-        return self.data.get_and_check_path_from_db(item_info.name, item_info.platform, item_info.arch)
+        return self.data.get_and_check_path_from_db(item_location)
 
     async def _call_instance(self, item: ItemInfo):
         cls = downloader_classes.get(item.website)
