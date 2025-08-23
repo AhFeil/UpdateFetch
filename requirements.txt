@@ -3,3 +3,4 @@ aiofiles
 ruamel.yaml
 beautifulsoup4
 fastapi[all]
+source2RSS_client

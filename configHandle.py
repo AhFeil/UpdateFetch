@@ -1,12 +1,10 @@
-import base64
 import sys
 import os
 import logging.config
-from datetime import datetime
-from typing import Generator, Any
+from typing import Generator, Any, Iterator
 
 from ruamel.yaml import YAML, YAMLError
-import httpx
+from source2RSS_client import Source2RSSClient, S2RProfile
 
 
 configfile = os.getenv("UPDATEFETCH_CONFIG_FILE", default='config_and_data_files/config.yaml')
@@ -15,9 +13,9 @@ absolute_configfiles = map(lambda x:os.path.abspath(x), (configfile, pgm_configf
 
 
 class Config(object):
-    def __init__(self, configs_path: tuple[str]) -> None:
+    def __init__(self, configs_path: Iterator[str]) -> None:
         self.yaml = YAML()
-        self.configs_path = configs_path
+        self.configs_path = tuple(configs_path)
         self.example_items = os.path.abspath("examples/items.yaml")
         self.reload()
 
@@ -60,38 +58,21 @@ class Config(object):
         # post2RSS 相关信息
         post2RSS = user_configs.get("post2RSS")
         if post2RSS and post2RSS["username"] != post2RSS["password"]: # 后面的不等判断是为了使用默认配置时忽略 post2RSS
-            self.post2RSS_url = f"http://{post2RSS['ip_or_domain']}:{post2RSS['port']}/post_src/{post2RSS['source_name']}/"
-            self.src_url = f"http://rss.vfly2.com/query_rss/{post2RSS['source_name']}.xml/#"
-            credentials = f"{post2RSS['username']}:{post2RSS['password']}"
-            encoded_credentials = base64.b64encode(credentials.encode('utf-8')).decode('utf-8')
-            self.post2RSS_headers = {
-                "accept": "application/json",
-                "Content-Type": "application/json",
-                "Authorization": f"Basic {encoded_credentials}"
+            s2r_profile: S2RProfile = {
+                "ip_or_domain": post2RSS["ip_or_domain"],
+                "port": post2RSS["port"],
+                "username": post2RSS["username"],
+                "password": post2RSS["password"],
+                "source_name": post2RSS["source_name"],
             }
+            self.s2r_c = Source2RSSClient.create(s2r_profile)
         else:
-            self.post2RSS_url = ""
+            self.s2r_c = None
 
+    async def post2RSS(self, title: str, summary: str):
+        if self.s2r_c:
+            await self.s2r_c.post_article(title, summary)
 
 config = Config(absolute_configfiles)
 
 logger = logging.getLogger("post2RSS")
-
-async def post2RSS(title: str, summary: str) -> httpx.Response | None:
-    """不引发异常"""
-    if config.post2RSS_url:
-        timeout = httpx.Timeout(10.0, read=10.0)
-        data_raw = [{
-                "title": title,
-                "link": config.src_url + str(datetime.now().timestamp()),
-                "summary": summary,
-                "content": summary,
-                "pub_time": datetime.now().timestamp()
-            }]
-        async with httpx.AsyncClient() as client:
-            try:
-                response = await client.post(url=config.post2RSS_url, headers=config.post2RSS_headers, json=data_raw, timeout=timeout)
-            except Exception as e:
-                logger.warning(f"exception of post2RSS: {e}")
-            else:
-                return response

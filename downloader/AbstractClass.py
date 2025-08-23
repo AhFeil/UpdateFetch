@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 import jinja2
 
 from dataHandle import ItemInfo
-from configHandle import post2RSS
+from configHandle import config
 
 class NotFound(Exception):
     """未能根据传入的信息找到相应的资源"""
@@ -94,7 +94,7 @@ class AbstractDownloader(ABC):
             except Exception as e:
                 msg = f"Error downloading {url}\n" + str(e)
                 logger.error(msg)
-                await post2RSS("error log of Downloader", msg)
+                await config.post2RSS("error log of Downloader", msg)
                 # 删除可能已经部分下载的文件
                 if os.path.exists(filepath):
                     os.remove(filepath)
