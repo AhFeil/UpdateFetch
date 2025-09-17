@@ -6,116 +6,80 @@
     <meta name="robots" content="noindex, nofollow">
     <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
-    {% block extra_styles %}{% endblock %}
     <title>{% block title %}UpdateFetch{% endblock %}</title>
-    {{ track_js_code|safe }}
+
+    {% include "track.txt" ignore missing %}
+    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
     <style>
         body {
-            font-family: Arial, sans-serif;
+            grid-template-columns: 1fr min(75rem, 90%) 1fr;
         }
         .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .title {
-            text-align: center;
-        }
-        .subtitle {
-            text-align: center;
-            font-size: 14px;
-        }
-        .divider {
-            border-top: 1px dashed #000;
-            margin: 20px 0;
-        }
-        .section {
-            margin-top: 20px;
-        }
-        .section h2 {
-            font-size: 24px;
-        }
-        .content {
             display: flex;
+            justify-content: center;
             flex-wrap: wrap;
+            gap: 1.5rem;
         }
         .item {
-            width: 30%;
-            padding: 10px;
-            box-sizing: border-box;
-        }
-        .item-image-width {
-            width: 200px;
-        }
-        /* Add more styles as needed */
+            margin-bottom: 1.5rem;
+            break-inside: avoid;
 
-        /* 响应式设计：为手机和平板屏幕调整样式 */
-        @media (max-width: 768px) {
-            .content {
-                display: flex; /* 维持弹性盒子布局 */
-                flex-wrap: wrap; /* 允许内容换行 */
-            }
-            .item {
-                width: calc(50% - 20px); /* 每个 item 占据行宽的一半减去 padding */
-                margin: 10px; /* 添加 margin 来保证间隔 */
-                box-sizing: border-box;
-            }
-            .item-image-width {
-                width: 100%; /* 图片宽度自适应容器宽度 */
-                height: auto; /* 高度自动调整保持图片比例 */
-            }
+            flex-basis: 200px;
         }
-        
-        /* 也可以添加其他断点，针对更小的屏幕进行调整 */
-        @media (max-width: 480px) {
-            .content {
-                display: block; /* 在较小屏幕上堆叠元素而不是并排 */
-            }
-            .item {
-                width: 100%; /* 每一项占满整个宽度 */
-                padding: 10px;
-                box-sizing: border-box;
-            }
-            .item-image-width {
-                width: 100%; /* 图片宽度自适应容器宽度 */
-                height: auto; /* 高度自动调整保持图片比例 */
-            }
+        .item h3 {
+            font-size: 1.5rem;
+            margin-top: 0;
+        }
+        .item img {
+            width: 150px;
+        }
+        .item p {
+            margin: 0.5rem 0;
+        }
+        .item ul {
+            list-style-position: inside;
+            padding-inline-start: 0;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="title">
-            <h1>UpdateFetch</h1>
-            <p class="subtitle">by AhFei</p>
-            <p class="subtitle">GitHub: <a href="https://github.com/AhFeil/UpdateFetch">https://github.com/AhFeil/UpdateFetch</a></p>
-        </div>
-        <div class="divider"></div>
-        <!-- 配置中有的可下载项 -->
+    <header>
+        <h1>UpdateFetch</h1>
+        <p style="font-size: 14px">by AhFei</p>
+        <p style="font-size: 14px">GitHub: <a href="https://github.com/AhFeil/UpdateFetch">https://github.com/AhFeil/UpdateFetch</a></p>
+    </header>
+
+    <main>
         {% for category_title, items in categories.items() %}
-        <div class="section">
+        <section>
             <h2>{{ category_title }}</h2>
-            <div class="content">
+            <div class="container">
                 {% for item in items %}
-                <div class="item">
-                    <h3>{{ item.name }}</h3>
-                    <img src="{{ item.image }}" class="item-image-width">
-                    {% if item.website %}
-                    <p><a href="{{ item.website }}">Official Site</a></p>
-                    {% endif %}                
-                    <p>Version: {{ item.version }}</p>
-                    <p>Update: {{ item.last_modified }}</p>
-                    <p>Downloads:
-                        {% for download in item.downloads %}
-                            <a href="{{ download.link }}" target="_blank">{{ download.platform }}({{ download.architecture }})</a>, 
-                        {% endfor %}
-                    </p>
-                </div>
+                    <div class="item">
+                        <h3>{{ item.name }}</h3>
+                        <img src="{{ item.image }}">
+                        {% if item.website %}
+                        <p><a href="{{ item.website }}">Official Site</a></p>
+                        {% endif %}
+                        <p>Version: {{ item.version }}</p>
+                        <p>Update: {{ item.last_modified }}</p>
+                        <p>Downloads:</p>
+                        <ul>
+                            {% for download in item.downloads %}
+                            <li>
+                                <a href="{{ download.link }}" target="_blank">{{ download.platform }}({{ download.architecture }})</a>, 
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
                 {% endfor %}
             </div>
-        </div>
+        </section>
         {% endfor %}
+    </main>
 
-    </div>
+    <footer>
+        {% include "ad.html" ignore missing %}
+    </footer>
 </body>
 </html>
