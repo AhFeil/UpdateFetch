@@ -24,7 +24,7 @@ fi
 mkdir -p temp_download
 
 # 创建 systemd 配置文件
-if [ ! -d ${program_name}.service ]
+if [ ! -f ${program_name}.service ]
 then
 cat > ./${program_name}.service <<EOF
 [Unit]

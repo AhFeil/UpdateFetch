@@ -29,6 +29,11 @@ class Item(TypedDict):
     version: str
     last_modified: datetime
 
+ItemLocation = namedtuple(
+    "ItemLocation",
+    ["name", "platform", "arch"]
+)
+
 # 在程序全流程中传递的一条下载项内容
 ItemInfo = namedtuple(
     "ItemInfo",
@@ -117,12 +122,12 @@ class DBHandle():
         with sqlite3.connect(self.config.sqlite_db_path, isolation_level=None) as conn:
             conn.execute("UPDATE dl_buf_table SET version = ?, abs_path = ? WHERE id = ?", (version, path, id))
 
-    def get_item_from(self, table_name: str, name: str, platform: str, arch: str):
+    def get_item_from(self, table_name: str, item_location: ItemLocation):
         query = f"SELECT * FROM {table_name} WHERE name=? AND platform=? AND arch=?"
         with sqlite3.connect(self.config.sqlite_db_path, isolation_level=None) as conn:
             cursor = conn.cursor()
             # 在 SQLite 中，表名和列名不能使用参数化查询的占位符（如 ?）
-            cursor.execute(query, (name, platform, arch))
+            cursor.execute(query, item_location)
             return cursor.fetchone()
 
     def del_item_in_buf_by_id(self, id: int):
@@ -155,17 +160,16 @@ class Data():
         self.update_categories()
 
     def update_item_in_db(self, item: ItemInfo, version, filepath):
-        info = self.db.get_item_from("dl_buf_table", item.name, item.platform, item.arch)
+        info = self.db.get_item_from("dl_buf_table", ItemLocation(item.name, item.platform, item.arch))
         if info:
             self.db.update_item_in_buf(item.buf_id, version, filepath)
         else:
             self.db.insert_item_to_buf(item.name, item.platform, item.arch, version, filepath)
         self.update_categories()
 
-    # 定位三元组可以提取 todo
-    def get_and_check_path_from_db(self, name: str, platform: str, arch: str) -> str:
+    def get_and_check_path_from_db(self, item_location: ItemLocation) -> str:
         """返回路径"""
-        info = self.db.get_item_from("dl_buf_table", name, platform, arch)
+        info = self.db.get_item_from("dl_buf_table", item_location)
         if not info:
             return ""
 
@@ -175,16 +179,16 @@ class Data():
         self.update_categories()
         return ""
 
-    def _get_item_info(self, name, platform, arch):
-        res = self.db.get_item_from("items_table", name, platform, arch)
-        return ItemInfo(*res[1:], None, None, None)
+    def _get_item_info(self, item_location: ItemLocation):
+        res = self.db.get_item_from("items_table", item_location)
+        return ItemInfo(*res[1:], None, None, None) # type: ignore
 
-    def get_item_situation(self, name, platform, arch):
-        res = self.db.get_execute_result(False, DBHandle.get_item_situation, (name, platform, arch))
+    def get_item_situation(self, item_location: ItemLocation):
+        res = self.db.get_execute_result(False, DBHandle.get_item_situation, item_location)
         if res:
             datetime_obj = datetime.strptime(res[11], "%Y-%m-%d %H:%M:%S")
             return ItemInfo(name=res[1], image=None, category=None, website=res[2], project_name=res[3], homepage=res[13], sample_url=res[4], platform=res[5], arch=res[6], original_platform=res[7], original_arch=res[8], suffix_name=res[9], formated_dl_url=None, staleDurationDay=res[12], version=res[10], last_modified=datetime_obj, buf_id=res[0])
-        return self._get_item_info(name, platform, arch)
+        return self._get_item_info(item_location)
 
     def reload_items(self):
         items = self._reload(self.config.items_file_path)
