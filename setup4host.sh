@@ -1,6 +1,8 @@
 #!/bin/bash
 # setup4host.sh - set up virtual environment, install dependencies and create systemd file
 
+set -e
+
 program_name="updatefetch"   # 不能有空格等特殊符号
 current_uid=$(id -u)
 current_dir=$(pwd)
