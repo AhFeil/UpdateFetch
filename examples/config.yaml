@@ -14,8 +14,7 @@ default_image: https://ib.ahfei.blog/imagesbed/picture_has_been_chewed_up_by_cat
 default_website: https://github.com/AhFeil/updatefetch
 
 post2RSS:
-  ip_or_domain: rss.vfly2.com
-  port: 80
+  url: https://rss.vfly2.com
   username: xxx
   password: xxx
   source_name: uf_severe_log

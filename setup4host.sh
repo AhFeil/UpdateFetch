@@ -1,6 +1,8 @@
 #!/bin/bash
 # setup4host.sh - set up virtual environment, install dependencies and create systemd file
 
+set -e
+
 program_name="updatefetch"   # 不能有空格等特殊符号
 current_uid=$(id -u)
 current_dir=$(pwd)
@@ -36,7 +38,7 @@ WorkingDirectory=${current_dir}
 User=${current_uid}
 Group=${current_uid}
 Type=simple
-ExecStart=${current_dir}/.env/bin/uvicorn main:app --host 0.0.0.0 --port 8679
+ExecStart=${current_dir}/.env/bin/uvicorn main:app --host 127.0.0.1 --port 8679
 ExecStop=/bin/kill -s HUP $MAINPID
 Environment=PYTHONUNBUFFERED=1
 RestartSec=15

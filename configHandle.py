@@ -58,14 +58,7 @@ class Config(object):
         # post2RSS 相关信息
         post2RSS = user_configs.get("post2RSS")
         if post2RSS and post2RSS["username"] != post2RSS["password"]: # 后面的不等判断是为了使用默认配置时忽略 post2RSS
-            s2r_profile: S2RProfile = {
-                "ip_or_domain": post2RSS["ip_or_domain"],
-                "port": post2RSS["port"],
-                "username": post2RSS["username"],
-                "password": post2RSS["password"],
-                "source_name": post2RSS["source_name"],
-            }
-            self.s2r_c = Source2RSSClient.create(s2r_profile)
+            self.s2r_c = Source2RSSClient.create(post2RSS)
         else:
             self.s2r_c = None
 
